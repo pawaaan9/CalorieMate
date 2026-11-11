@@ -6,6 +6,7 @@ import { addEntry, updateEntry } from "@/lib/db";
 import { macrosFor } from "@/lib/nutrition";
 import { searchOnline } from "@/lib/onlineSearch";
 import { FOOD_CATEGORIES, MEALS, SOURCE_LABEL, type Entry, type Food, type Macros, type Meal, type Portion } from "@/lib/types";
+import { FoodForm } from "./FoodForm";
 import { useData } from "./Providers";
 import { useToast } from "./Toast";
 import { Button, CategoryIcon, Chip, ErrorNote, EstimatedBadge, FoodAvatar, Input, MealIcon, Modal, Spinner } from "./ui";
@@ -72,12 +73,13 @@ function AmountForm({
   estimated: boolean;
   per100g: Macros;
   portions: Portion[];
-  initial: { portionIndex: number; quantity: number; meal: Meal };
+  /** `null` quantity starts empty, ready to type a scale reading. */
+  initial: { portionIndex: number; quantity: number | null; meal: Meal };
   submitLabel: string;
   onSubmit: (v: { portion: Portion; quantity: number; meal: Meal }) => Promise<void>;
 }) {
   const [portionIndex, setPortionIndex] = useState(initial.portionIndex);
-  const [quantity, setQuantity] = useState(String(initial.quantity));
+  const [quantity, setQuantity] = useState(initial.quantity === null ? "" : String(initial.quantity));
   const [meal, setMeal] = useState<Meal>(initial.meal);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,16 +138,22 @@ function AmountForm({
         >
           <Minus size={20} />
         </button>
-        <input
-          aria-label="Quantity"
-          type="number"
-          inputMode="decimal"
-          min="0"
-          step="any"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          className="w-28 bg-transparent text-center font-display text-4xl font-bold tabular-nums text-fg outline-none"
-        />
+        <div className="flex items-baseline justify-center">
+          <input
+            aria-label={isGrams ? "Weight in grams" : "Quantity"}
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="any"
+            placeholder={isGrams ? "0" : "1"}
+            autoFocus={initial.quantity === null}
+            onFocus={(e) => e.currentTarget.select()}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            className={`${isGrams ? "w-24" : "w-28"} bg-transparent text-center font-display text-4xl font-bold tabular-nums text-fg outline-none placeholder:text-muted/40`}
+          />
+          {isGrams && <span className="font-display text-xl font-bold text-muted">g</span>}
+        </div>
         <button
           type="button"
           aria-label="More"
@@ -200,7 +208,11 @@ function AmountForm({
 
       <MacroPreview m={macrosFor(per100g, grams)} />
       <p className="text-center text-xs text-muted">
-        {valid ? `${Math.round(grams)} g in total` : "Enter a quantity above zero"}
+        {valid
+          ? `${Math.round(grams)} g in total`
+          : isGrams
+            ? "Weigh it on your scale and type the grams"
+            : "Enter a quantity above zero"}
         {estimated && " · estimated values"}
       </p>
       {error && <ErrorNote>{error}</ErrorNote>}
@@ -211,7 +223,17 @@ function AmountForm({
   );
 }
 
-function FoodRow({ food, onPick, onQuickAdd }: { food: Food; onPick: (f: Food) => void; onQuickAdd: (f: Food) => void }) {
+function FoodRow({
+  food,
+  onPick,
+  onQuickAdd,
+  weigh = false,
+}: {
+  food: Food;
+  onPick: (f: Food) => void;
+  onQuickAdd: (f: Food) => void;
+  weigh?: boolean;
+}) {
   const p = food.portions[0] ?? { label: "100 g", grams: 100 };
   const kcal = Math.round((food.per100g.calories * p.grams) / 100);
   return (
@@ -225,15 +247,23 @@ function FoodRow({ food, onPick, onQuickAdd }: { food: Food; onPick: (f: Food) =
           </span>
           <span className="block truncate text-xs text-muted">
             {food.brand ? `${food.brand} · ` : food.source === "usda" || food.source === "off" ? `${SOURCE_LABEL[food.source]} · ` : ""}
-            1 {p.label} · <span className="font-semibold text-fg">{kcal} kcal</span>
+            {weigh ? (
+              <>
+                <span className="font-semibold text-fg">{food.per100g.calories} kcal</span> / 100 g
+              </>
+            ) : (
+              <>
+                1 {p.label} · <span className="font-semibold text-fg">{kcal} kcal</span>
+              </>
+            )}
           </span>
         </span>
       </button>
       <button
         type="button"
-        aria-label={`Quick add 1 ${p.label} of ${food.name}`}
-        title={`Add 1 ${p.label}`}
-        onClick={() => onQuickAdd(food)}
+        aria-label={weigh ? `Weigh and add ${food.name}` : `Quick add 1 ${p.label} of ${food.name}`}
+        title={weigh ? "Weigh and add" : `Add 1 ${p.label}`}
+        onClick={() => (weigh ? onPick(food) : onQuickAdd(food))}
         className="mr-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent transition hover:bg-accent hover:text-accent-fg active:scale-90"
       >
         <Plus size={18} strokeWidth={2.5} />
@@ -258,6 +288,8 @@ export function FoodPicker({
   const [q, setQ] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [picked, setPicked] = useState<Food | null>(null);
+  const [creating, setCreating] = useState<string | null>(null);
+  const weigh = profile?.weighFood ?? false;
   const [online, setOnline] = useState<{ q: string; foods: Food[]; failed: string[] } | null>(null);
   const [searching, setSearching] = useState(false);
 
@@ -300,6 +332,7 @@ export function FoodPicker({
   }
 
   function close() {
+    setCreating(null);
     setPicked(null);
     setQ("");
     setCategory(null);
@@ -319,7 +352,27 @@ export function FoodPicker({
         </span>
       }
     >
-      {picked ? (
+      {creating !== null ? (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setCreating(null)}
+            className="inline-flex items-center gap-1 text-sm font-semibold text-muted hover:text-fg"
+          >
+            <ArrowLeft size={15} /> Back to search
+          </button>
+          <FoodForm
+            food={null}
+            initialName={creating}
+            onCancel={() => setCreating(null)}
+            onSaved={(food) => {
+              toast(`${food.name} saved to your foods`);
+              setCreating(null);
+              setPicked(food);
+            }}
+          />
+        </div>
+      ) : picked ? (
         <div className="space-y-3">
           <button
             type="button"
@@ -335,8 +388,8 @@ export function FoodPicker({
             subtitle={`${picked.brand ? `${picked.brand} · ` : ""}${SOURCE_LABEL[picked.source]} · ${picked.per100g.calories} kcal / 100 g`}
             estimated={picked.estimated}
             per100g={picked.per100g}
-            portions={[...picked.portions, GRAMS]}
-            initial={{ portionIndex: 0, quantity: 1, meal }}
+            portions={weigh ? [GRAMS, ...picked.portions] : [...picked.portions, GRAMS]}
+            initial={{ portionIndex: 0, quantity: weigh ? null : 1, meal }}
             submitLabel="Add to log"
             onSubmit={async ({ portion, quantity, meal: m }) => {
               await addEntry(uid, { date, meal: m, food: picked, portion, quantity }, goal);
@@ -378,7 +431,7 @@ export function FoodPicker({
               <p className="mb-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Recent</p>
               <ul className="-mx-2">
                 {recent.map((f) => (
-                  <FoodRow key={f.id} food={f} onPick={setPicked} onQuickAdd={quickAdd} />
+                  <FoodRow key={f.id} food={f} onPick={setPicked} onQuickAdd={quickAdd} weigh={weigh} />
                 ))}
               </ul>
             </div>
@@ -391,7 +444,7 @@ export function FoodPicker({
               </p>
               <ul className="-mx-2">
                 {local.map((f) => (
-                  <FoodRow key={f.id} food={f} onPick={setPicked} onQuickAdd={quickAdd} />
+                  <FoodRow key={f.id} food={f} onPick={setPicked} onQuickAdd={quickAdd} weigh={weigh} />
                 ))}
               </ul>
             </div>
@@ -400,6 +453,22 @@ export function FoodPicker({
               Nothing saved matches “{query}”{category ? ` in ${category}` : ""}.
             </p>
           )}
+
+          <button
+            type="button"
+            onClick={() => setCreating(query)}
+            className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-line px-3 py-3 text-left text-sm transition hover:border-accent/60"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+              <Plus size={18} strokeWidth={2.5} />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-semibold">
+                {query ? `Create “${query}”` : "Create a new food"}
+              </span>
+              <span className="block text-xs text-muted">Add your own food from its nutrition label</span>
+            </span>
+          </button>
 
           {query.length >= 2 && (
             <div className="border-t border-line pt-4">
@@ -425,13 +494,13 @@ export function FoodPicker({
                       <p className="mb-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Online · USDA & Open Food Facts</p>
                       <ul className="-mx-2">
                         {onlineFoods.map((f) => (
-                          <FoodRow key={f.id} food={f} onPick={setPicked} onQuickAdd={quickAdd} />
+                          <FoodRow key={f.id} food={f} onPick={setPicked} onQuickAdd={quickAdd} weigh={weigh} />
                         ))}
                       </ul>
                     </div>
                   )}
                   {onlineFoods.length === 0 && online.failed.length === 0 && (
-                    <p className="px-1 text-sm text-muted">No online results. You can add it yourself on the Foods page.</p>
+                    <p className="px-1 text-sm text-muted">No online results. Create it yourself with the button above.</p>
                   )}
                 </div>
               )}

@@ -330,7 +330,7 @@ function slug(name: string): string {
 }
 
 /** Bump when adding foods; existing accounts receive only the newer ones. */
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 
 /**
  * Value fixes after checking against USDA SR Legacy. Applied to existing
@@ -357,17 +357,38 @@ export const SEED_CORRECTIONS: { version: number; id: string; from: Macros; to: 
   },
 ];
 
-const tag = (rows: Row[], version: number) => rows.map((row) => ({ row, version }));
+const YOGURT = [p("Sri Lankan yogurt cup", 80), p("tablespoon", 15), p("cup", 245)];
+const GREEK = [p("small tub", 150), p("tablespoon", 15), p("cup", 245)];
 
-export const SEED_FOODS: (Food & { seedVersion: number })[] = [...tag(ROWS, 1), ...tag(MORE_ROWS, 2)].map(
-  ({ row: [name, category, [calories, protein, carbs, fat], portions, aliases], version }) => ({
+/** Generic yogurts with measured USDA SR Legacy values (not estimates). */
+const YOGURT_ROWS: Row[] = [
+  ["Yogurt, non-fat, plain", "Drinks & dairy", [56, 5.7, 7.7, 0.2], YOGURT, ["yoghurt", "nonfat", "non fat", "fat free", "skim"]],
+  ["Yogurt, low-fat, plain", "Drinks & dairy", [63, 5.3, 7, 1.6], YOGURT, ["yoghurt", "lowfat", "low fat"]],
+  ["Yogurt, whole milk, plain", "Drinks & dairy", [61, 3.5, 4.7, 3.3], YOGURT, ["yoghurt", "full cream"]],
+  ["Yogurt, non-fat, fruit", "Drinks & dairy", [95, 4.4, 19, 0.2], YOGURT, ["yoghurt", "nonfat", "non fat", "fat free", "strawberry", "mango"]],
+  ["Yogurt, non-fat, vanilla", "Drinks & dairy", [78, 2.9, 17, 0], YOGURT, ["yoghurt", "nonfat", "non fat", "fat free"]],
+  ["Yogurt, low-fat, fruit", "Drinks & dairy", [99, 4, 18.6, 1.2], YOGURT, ["yoghurt", "lowfat", "low fat", "strawberry", "mango"]],
+  ["Greek yogurt, non-fat, plain", "Drinks & dairy", [59, 10.2, 3.6, 0.4], GREEK, ["yoghurt", "nonfat", "non fat", "fat free"]],
+  ["Greek yogurt, low-fat, plain", "Drinks & dairy", [73, 10, 3.9, 1.9], GREEK, ["yoghurt", "lowfat", "low fat"]],
+  ["Greek yogurt, whole milk, plain", "Drinks & dairy", [97, 9, 4, 5], GREEK, ["yoghurt", "full cream"]],
+  ["Greek yogurt, non-fat, fruit", "Drinks & dairy", [82, 8.1, 12.1, 0.2], GREEK, ["yoghurt", "nonfat", "non fat", "fat free", "strawberry"]],
+];
+
+const tag = (rows: Row[], version: number, estimated = true) => rows.map((row) => ({ row, version, estimated }));
+
+export const SEED_FOODS: (Food & { seedVersion: number })[] = [
+  ...tag(ROWS, 1),
+  ...tag(MORE_ROWS, 2),
+  ...tag(YOGURT_ROWS, 4, false),
+].map(
+  ({ row: [name, category, [calories, protein, carbs, fat], portions, aliases], version, estimated }) => ({
   id: `sl-${slug(name)}`,
   name,
   aliases: aliases ?? [],
   category,
   per100g: { calories, protein, carbs, fat },
   portions,
-  estimated: true,
+  estimated,
   source: "seed",
   seedVersion: version,
 }));

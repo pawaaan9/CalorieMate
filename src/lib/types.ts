@@ -22,7 +22,7 @@ export interface Portion {
 export type FoodSource = "seed" | "custom" | "usda" | "off";
 
 export const SOURCE_LABEL: Record<FoodSource, string> = {
-  seed: "Sri Lankan database",
+  seed: "Built-in foods",
   custom: "My food",
   usda: "USDA",
   off: "Open Food Facts",
@@ -98,6 +98,8 @@ export interface Profile {
   targetWeightKg: number;
   activityLevel: ActivityLevel;
   dailyCalorieTarget: number;
+  /** Log food by weight (grams from a kitchen scale) by default. */
+  weighFood: boolean;
   onboarded: boolean;
 }
 
@@ -110,5 +112,6 @@ export const DEFAULT_PROFILE: Profile = {
   targetWeightKg: 70,
   activityLevel: "light",
   dailyCalorieTarget: 2000,
+  weighFood: false,
   onboarded: false,
 };

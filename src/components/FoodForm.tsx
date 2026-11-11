@@ -14,16 +14,31 @@ interface PortionRow {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
+/**
+ * Create or edit a food. Used on the Foods page and inside food search, where a
+ * newly created food can be logged straight away via `onSaved`.
+ */
+export function FoodForm({
+  food,
+  initialName = "",
+  onSaved,
+  onCancel,
+}: {
+  food: Food | null;
+  initialName?: string;
+  onSaved: (food: Food) => void;
+  onCancel?: () => void;
+}) {
   const { uid } = useData();
-  const [name, setName] = useState(food?.name ?? "");
+  const [name, setName] = useState(food?.name ?? initialName);
+  const [brand, setBrand] = useState(food?.brand ?? "");
   const [category, setCategory] = useState(food?.category ?? "Other");
   const [basis, setBasis] = useState("100");
   const [calories, setCalories] = useState(food ? String(food.per100g.calories) : "");
   const [protein, setProtein] = useState(food ? String(food.per100g.protein) : "");
   const [carbs, setCarbs] = useState(food ? String(food.per100g.carbs) : "");
   const [fat, setFat] = useState(food ? String(food.per100g.fat) : "");
-  const [estimated, setEstimated] = useState(food?.estimated ?? true);
+  const [estimated, setEstimated] = useState(food?.estimated ?? false);
   const [portions, setPortions] = useState<PortionRow[]>(
     food?.portions.map((p) => ({ label: p.label, grams: String(p.grams) })) ?? [{ label: "serving", grams: "100" }],
   );
@@ -50,11 +65,11 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await saveFood(uid, {
+      const saved: Omit<Food, "id"> & { id?: string } = {
         id: food?.id,
         name: name.trim(),
         aliases: food?.aliases ?? [],
-        brand: food?.brand,
+        brand: brand.trim() || undefined,
         category,
         per100g: { calories: Math.round(kcal * k), protein: macro(protein), carbs: macro(carbs), fat: macro(fat) },
         portions: cleanPortions,
@@ -62,8 +77,9 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
         // Edited built-in foods stay in the database under their original id.
         source: food?.source ?? "custom",
         lastUsedAt: food?.lastUsedAt,
-      });
-      onClose();
+      };
+      const id = await saveFood(uid, saved);
+      onSaved({ ...saved, id });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save. Try again.");
       setBusy(false);
@@ -78,9 +94,12 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
         void submit();
       }}
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <Field label="Name">
-          <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Amma's chicken curry" />
+      <Field label="Name">
+        <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Non-fat yogurt, Amma's chicken curry" />
+      </Field>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Brand (optional)">
+          <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. Kotmale, Pelwatte, Highland" />
         </Field>
         <Field label="Category">
           <Select value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -93,7 +112,10 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
 
       <fieldset className="space-y-3 rounded-3xl border border-line p-4">
         <legend className="px-1 text-xs font-medium text-muted">Nutrition</legend>
-        <Field label="Values below are for this many grams" hint="Use 100 for per-100 g values, or the pack's serving weight.">
+        <p className="text-xs text-muted">
+          Copy these from the nutrition label on the pack. Most labels list values per 100 g.
+        </p>
+        <Field label="Values below are for this many grams" hint="Keep 100 for per-100 g values, or enter the pack's serving size.">
           <Input type="number" inputMode="decimal" min="0" step="any" value={basis} onChange={(e) => setBasis(e.target.value)} />
         </Field>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -112,7 +134,7 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="h-4 w-4 accent-[#bfee57]" checked={estimated} onChange={(e) => setEstimated(e.target.checked)} />
-          These values are estimates
+          These values are estimates (not from a label)
         </label>
       </fieldset>
 
@@ -149,9 +171,16 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
       </fieldset>
 
       {error && <ErrorNote>{error}</ErrorNote>}
-      <Button type="submit" size="lg" disabled={busy} className="w-full">
-        {busy ? "Saving…" : food ? "Save changes" : "Add food"}
-      </Button>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row">
+        {onCancel && (
+          <Button variant="secondary" size="lg" onClick={onCancel} className="w-full sm:w-auto">
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" size="lg" disabled={busy} className="w-full sm:flex-1">
+          {busy ? "Saving…" : food ? "Save changes" : "Save food"}
+        </Button>
+      </div>
     </form>
   );
 }
@@ -159,7 +188,7 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
 export function FoodFormModal({ open, food, onClose }: { open: boolean; food: Food | null; onClose: () => void }) {
   return (
     <Modal open={open} onClose={onClose} title={food ? "Edit food" : "New food"}>
-      <Form key={food?.id ?? "new"} food={food} onClose={onClose} />
+      <FoodForm key={food?.id ?? "new"} food={food} onSaved={onClose} />
     </Modal>
   );
 }

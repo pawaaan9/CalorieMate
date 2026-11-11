@@ -23,6 +23,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
   const [targetWeight, setTargetWeight] = useState(String(profile.targetWeightKg));
   const [activity, setActivity] = useState<ActivityLevel>(profile.activityLevel);
   const [calories, setCalories] = useState(String(profile.dailyCalorieTarget));
+  const [weighFood, setWeighFood] = useState(profile.weighFood ?? false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
         targetWeightKg: n.target,
         activityLevel: activity,
         dailyCalorieTarget: Math.round(n.calories),
+        weighFood,
         onboarded: true,
       });
       // A changed current weight is recorded as today's weigh-in.
@@ -194,6 +196,38 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
             )}
           </div>
         </div>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardTitle>Food logging</CardTitle>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={weighFood}
+          onClick={() => {
+            setWeighFood(!weighFood);
+            touch();
+          }}
+          className="flex w-full items-center gap-4 rounded-2xl border border-line bg-raised p-4 text-left transition hover:border-accent/50"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Weigh my food (log in grams)</span>
+            <span className="mt-0.5 block text-xs text-muted">
+              For a kitchen scale. Every food opens on grams so you can type the weight straight away. Cups, pieces and
+              spoons stay available.
+            </span>
+          </span>
+          <span
+            aria-hidden
+            className={`relative h-7 w-12 shrink-0 rounded-full transition ${weighFood ? "bg-accent" : "bg-subtle"}`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full transition-all ${
+                weighFood ? "left-6 bg-accent-fg" : "left-1 bg-muted"
+              }`}
+            />
+          </span>
+        </button>
       </Card>
 
       <div className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-4 sm:flex-row sm:items-center sm:p-5 lg:col-span-2">
