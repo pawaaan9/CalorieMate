@@ -52,13 +52,15 @@ interface UsdaFood {
 
 async function searchUsda(q: string): Promise<Food[]> {
   const key = process.env.USDA_API_KEY || "DEMO_KEY";
-  // Built by hand: USDA answers 400 when the parentheses in "Survey (FNDDS)"
-  // are percent-encoded, which URLSearchParams would do.
-  const url =
-    "https://api.nal.usda.gov/fdc/v1/foods/search" +
-    `?api_key=${encodeURIComponent(key)}&query=${encodeURIComponent(q)}&pageSize=10` +
-    `&dataType=${encodeURIComponent("Foundation,SR Legacy,Survey (FNDDS)")}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), next: { revalidate: DAY } });
+  // POST with a JSON body: GET requests carrying "Survey (FNDDS)" in the URL
+  // are rejected with 400 by some USDA servers at random.
+  const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: q, pageSize: 10, dataType: ["Foundation", "SR Legacy", "Survey (FNDDS)"] }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    next: { revalidate: DAY },
+  });
   if (!res.ok) throw new Error(`USDA responded ${res.status}`);
   const data = (await res.json()) as { foods?: UsdaFood[] };
 
@@ -73,6 +75,8 @@ async function searchUsda(q: string): Promise<Food[]> {
     const protein = num(get(1003));
     const carbs = num(get(1005));
     const fat = num(get(1004));
+    // 2000 = Total Sugars, 1063 = Sugars, Total NLEA
+    const sugar = num(get(2000, 1063));
     // 1008 = energy (kcal); 2047/2048 = Atwater energy on Foundation foods.
     const kcal = get(1008, 2047, 2048);
     const calories = Math.round(kcal ?? protein * 4 + carbs * 4 + fat * 9);
@@ -89,7 +93,7 @@ async function searchUsda(q: string): Promise<Food[]> {
         id: `usda-${f.fdcId}`,
         name: titleCase(f.description),
         category: "Other",
-        per100g: { calories, protein, carbs, fat },
+        per100g: { calories, protein, carbs, fat, sugar },
         portions,
         estimated: kcal === undefined,
         source: "usda",
@@ -149,6 +153,7 @@ async function searchOff(q: string): Promise<Food[]> {
         protein: num(n["proteins_100g"]),
         carbs: num(n["carbohydrates_100g"]),
         fat: num(n["fat_100g"]),
+        sugar: num(n["sugars_100g"]),
       },
       portions,
       estimated: false,

@@ -12,6 +12,8 @@ export interface Macros {
   protein: number;
   carbs: number;
   fat: number;
+  /** Total sugar in grams (part of carbs). Missing on records saved before sugar tracking. */
+  sugar?: number;
 }
 
 export interface Portion {
@@ -100,6 +102,8 @@ export interface Profile {
   dailyCalorieTarget: number;
   /** Log food by weight (grams from a kitchen scale) by default. */
   weighFood: boolean;
+  /** Daily total-sugar limit in grams. */
+  sugarLimitG: number;
   onboarded: boolean;
 }
 
@@ -113,5 +117,6 @@ export const DEFAULT_PROFILE: Profile = {
   activityLevel: "light",
   dailyCalorieTarget: 2000,
   weighFood: false,
+  sugarLimitG: 50,
   onboarded: false,
 };

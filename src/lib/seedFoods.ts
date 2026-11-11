@@ -1,3 +1,4 @@
+import { SEED_SUGAR } from "./seedSugar";
 import type { Food, Macros, Portion } from "./types";
 
 /**
@@ -330,7 +331,10 @@ function slug(name: string): string {
 }
 
 /** Bump when adding foods; existing accounts receive only the newer ones. */
-export const SEED_VERSION = 4;
+export const SEED_VERSION = 5;
+
+/** Seed version that introduced sugar values; older accounts get them backfilled. */
+export const SUGAR_VERSION = 5;
 
 /**
  * Value fixes after checking against USDA SR Legacy. Applied to existing
@@ -386,7 +390,7 @@ export const SEED_FOODS: (Food & { seedVersion: number })[] = [
   name,
   aliases: aliases ?? [],
   category,
-  per100g: { calories, protein, carbs, fat },
+  per100g: { calories, protein, carbs, fat, sugar: SEED_SUGAR[slug(name)] ?? 0 },
   portions,
   estimated,
   source: "seed",

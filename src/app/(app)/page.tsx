@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { CalorieBars, WeightLine, type BarPoint } from "@/components/charts";
 import { useData } from "@/components/Providers";
-import { Card, CardTitle, MealIcon, PageHeader, ProgressBar, Ring } from "@/components/ui";
+import { Card, CardTitle, MealIcon, PageHeader, ProgressBar, Ring, SugarMeter } from "@/components/ui";
 import { addDays, daysBetween, formatFull, formatLong, formatShort, todayKey, weekStart, weekdayShort } from "@/lib/dates";
 import { useEntries, useSummaries } from "@/lib/hooks";
 import { greeting } from "@/lib/meta";
@@ -161,10 +161,11 @@ export default function DashboardPage() {
                   <Plus size={17} strokeWidth={2.75} /> Log food
                 </Link>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <MacroStat label="Protein" grams={todaySummary?.protein ?? 0} pct={pct(macroCals.protein)} dot="bg-s1" />
                 <MacroStat label="Carbs" grams={todaySummary?.carbs ?? 0} pct={pct(macroCals.carbs)} dot="bg-s2" />
                 <MacroStat label="Fat" grams={todaySummary?.fat ?? 0} pct={pct(macroCals.fat)} dot="bg-s3" />
+                <SugarMeter grams={todaySummary?.sugar ?? 0} limit={profile?.sugarLimitG ?? 50} />
               </div>
             </div>
           </div>

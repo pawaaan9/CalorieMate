@@ -24,6 +24,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
   const [activity, setActivity] = useState<ActivityLevel>(profile.activityLevel);
   const [calories, setCalories] = useState(String(profile.dailyCalorieTarget));
   const [weighFood, setWeighFood] = useState(profile.weighFood ?? false);
+  const [sugarLimit, setSugarLimit] = useState(String(profile.sugarLimitG ?? 50));
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +58,8 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
       if (!(v >= 20 && v <= 400)) return setError(`Enter a ${label} weight between 20 and 400 kg.`);
     }
     if (!(n.calories >= 800 && n.calories <= 6000)) return setError("Enter a daily calorie target between 800 and 6000 kcal.");
+    const sugarG = parseFloat(sugarLimit);
+    if (!(sugarG >= 5 && sugarG <= 300)) return setError("Enter a daily sugar limit between 5 and 300 g.");
 
     setBusy(true);
     setError(null);
@@ -72,6 +75,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
         activityLevel: activity,
         dailyCalorieTarget: Math.round(n.calories),
         weighFood,
+        sugarLimitG: Math.round(sugarG),
         onboarded: true,
       });
       // A changed current weight is recorded as today's weigh-in.
@@ -200,6 +204,32 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
 
       <Card className="lg:col-span-2">
         <CardTitle>Food logging</CardTitle>
+        <div className="mb-4 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:items-end">
+          <Field label="Daily sugar limit (g)">
+            <Input {...number} step="1" value={sugarLimit} onChange={(e) => setSugarLimit(e.target.value)} />
+          </Field>
+          <div className="flex flex-wrap gap-2 sm:pb-1">
+            {[25, 36, 50].map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => {
+                  setSugarLimit(String(g));
+                  touch();
+                }}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                  parseFloat(sugarLimit) === g ? "border-accent bg-accent-soft text-accent" : "border-line bg-raised text-muted hover:text-fg"
+                }`}
+              >
+                {g} g
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="mb-4 text-xs text-muted">
+          Counts total sugar, including the natural sugar in fruit and milk. Health guidance suggests keeping added sugar
+          under 25–36 g a day; 50 g of total sugar is a sensible starting limit.
+        </p>
         <button
           type="button"
           role="switch"

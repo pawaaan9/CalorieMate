@@ -38,6 +38,7 @@ export function FoodForm({
   const [protein, setProtein] = useState(food ? String(food.per100g.protein) : "");
   const [carbs, setCarbs] = useState(food ? String(food.per100g.carbs) : "");
   const [fat, setFat] = useState(food ? String(food.per100g.fat) : "");
+  const [sugar, setSugar] = useState(food?.per100g.sugar !== undefined ? String(food.per100g.sugar) : "");
   const [estimated, setEstimated] = useState(food?.estimated ?? false);
   const [portions, setPortions] = useState<PortionRow[]>(
     food?.portions.map((p) => ({ label: p.label, grams: String(p.grams) })) ?? [{ label: "serving", grams: "100" }],
@@ -59,6 +60,8 @@ export function FoodForm({
     if (!Number.isFinite(basisG) || basisG <= 0) return setError("Enter the weight the nutrition values are for.");
     if (!Number.isFinite(kcal) || kcal < 0) return setError("Enter the calories.");
     if (cleanPortions.length === 0) return setError("Add at least one portion with a weight in grams.");
+    if ((parseFloat(sugar) || 0) > (parseFloat(carbs) || 0) + 0.05)
+      return setError("Sugar is part of carbs, so it can't be more than the carbs value.");
 
     const k = 100 / basisG;
     const macro = (v: string) => round1(Math.max(0, parseFloat(v) || 0) * k);
@@ -71,7 +74,13 @@ export function FoodForm({
         aliases: food?.aliases ?? [],
         brand: brand.trim() || undefined,
         category,
-        per100g: { calories: Math.round(kcal * k), protein: macro(protein), carbs: macro(carbs), fat: macro(fat) },
+        per100g: {
+          calories: Math.round(kcal * k),
+          protein: macro(protein),
+          carbs: macro(carbs),
+          fat: macro(fat),
+          sugar: macro(sugar),
+        },
         portions: cleanPortions,
         estimated,
         // Edited built-in foods stay in the database under their original id.
@@ -118,20 +127,24 @@ export function FoodForm({
         <Field label="Values below are for this many grams" hint="Keep 100 for per-100 g values, or enter the pack's serving size.">
           <Input type="number" inputMode="decimal" min="0" step="any" value={basis} onChange={(e) => setBasis(e.target.value)} />
         </Field>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Field label="Calories (kcal)">
-            <Input type="number" inputMode="decimal" min="0" step="any" value={calories} onChange={(e) => setCalories(e.target.value)} />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <Field label="Calories" nowrap>
+            <Input type="number" inputMode="decimal" min="0" step="any" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="kcal" />
           </Field>
-          <Field label="Protein (g)">
+          <Field label="Protein (g)" nowrap>
             <Input type="number" inputMode="decimal" min="0" step="any" value={protein} onChange={(e) => setProtein(e.target.value)} />
           </Field>
-          <Field label="Carbs (g)">
+          <Field label="Carbs (g)" nowrap>
             <Input type="number" inputMode="decimal" min="0" step="any" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
           </Field>
-          <Field label="Fat (g)">
+          <Field label="Sugar (g)" nowrap>
+            <Input type="number" inputMode="decimal" min="0" step="any" value={sugar} onChange={(e) => setSugar(e.target.value)} />
+          </Field>
+          <Field label="Fat (g)" nowrap>
             <Input type="number" inputMode="decimal" min="0" step="any" value={fat} onChange={(e) => setFat(e.target.value)} />
           </Field>
         </div>
+        <p className="text-xs text-muted">Sugar is the “of which sugars” line under carbohydrates on the label.</p>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="h-4 w-4 accent-[#bfee57]" checked={estimated} onChange={(e) => setEstimated(e.target.checked)} />
           These values are estimates (not from a label)

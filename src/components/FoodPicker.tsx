@@ -37,17 +37,18 @@ export function searchFoods(foods: Food[], q: string): Food[] {
 
 function MacroPreview({ m }: { m: Macros }) {
   return (
-    <div className="grid grid-cols-4 gap-2 rounded-3xl border border-line bg-raised p-3 text-center">
+    <div className="grid grid-cols-5 gap-1 rounded-3xl border border-line bg-raised px-2 py-3 text-center sm:gap-2">
       {(
         [
           ["kcal", m.calories, "text-accent"],
           ["Protein", `${m.protein}g`, ""],
           ["Carbs", `${m.carbs}g`, ""],
+          ["Sugar", `${m.sugar ?? 0}g`, ""],
           ["Fat", `${m.fat}g`, ""],
         ] as const
       ).map(([label, value, cls]) => (
         <div key={label}>
-          <div className={`font-display text-lg font-bold tabular-nums ${cls}`}>{value}</div>
+          <div className={`font-display text-base font-bold tabular-nums sm:text-lg ${cls}`}>{value}</div>
           <div className="text-[11px] font-medium text-muted">{label}</div>
         </div>
       ))}

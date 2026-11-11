@@ -7,7 +7,7 @@ import { DatePicker } from "@/components/DatePicker";
 import { EntryEditor, FoodPicker } from "@/components/FoodPicker";
 import { useData } from "@/components/Providers";
 import { useToast } from "@/components/Toast";
-import { Button, Card, EstimatedBadge, IconButton, MealIcon, PageHeader, ProgressBar, Spinner } from "@/components/ui";
+import { Button, Card, EstimatedBadge, IconButton, MealIcon, PageHeader, ProgressBar, Spinner, SugarMeter } from "@/components/ui";
 import { addDays, formatLong, fromKey, todayKey, weekdayShort } from "@/lib/dates";
 import { copyEntries, deleteEntry, restoreEntry } from "@/lib/db";
 import { useEntries } from "@/lib/hooks";
@@ -144,7 +144,7 @@ export default function LogPage() {
         <div className="mt-4">
           <ProgressBar value={totals.calories} max={goal} over={remaining < 0} />
         </div>
-        <dl className="mt-4 grid grid-cols-3 gap-3">
+        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {(
             [
               ["Protein", totals.protein, "bg-s1"],
@@ -160,6 +160,7 @@ export default function LogPage() {
               <dd className="font-display text-lg font-bold tabular-nums">{Math.round(value)} g</dd>
             </div>
           ))}
+          <SugarMeter grams={totals.sugar ?? 0} limit={profile?.sugarLimitG ?? 50} className="px-3 py-2" />
         </dl>
       </Card>
 
@@ -205,7 +206,8 @@ export default function LogPage() {
                             {e.estimated && <EstimatedBadge />}
                           </div>
                           <div className="truncate text-xs text-muted">
-                            {amountText(e)} · P {Math.round(e.protein)} · C {Math.round(e.carbs)} · F {Math.round(e.fat)}
+                            {amountText(e)} · P {Math.round(e.protein)} · C {Math.round(e.carbs)} · S {Math.round(e.sugar ?? 0)} · F{" "}
+                            {Math.round(e.fat)}
                           </div>
                         </button>
                         <div className="shrink-0 text-right font-display text-sm font-bold tabular-nums">{e.calories}</div>

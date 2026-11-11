@@ -1,6 +1,6 @@
 import type { ActivityLevel, Macros, Sex } from "./types";
 
-export const ZERO: Macros = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+export const ZERO: Macros = { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 };
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -11,6 +11,7 @@ export function macrosFor(per100g: Macros, grams: number): Macros {
     protein: r1(per100g.protein * k),
     carbs: r1(per100g.carbs * k),
     fat: r1(per100g.fat * k),
+    sugar: r1((per100g.sugar ?? 0) * k),
   };
 }
 
@@ -21,10 +22,11 @@ export function sumMacros(items: Macros[]): Macros {
       protein: a.protein + b.protein,
       carbs: a.carbs + b.carbs,
       fat: a.fat + b.fat,
+      sugar: (a.sugar ?? 0) + (b.sugar ?? 0),
     }),
     ZERO,
   );
-  return { calories: Math.round(t.calories), protein: r1(t.protein), carbs: r1(t.carbs), fat: r1(t.fat) };
+  return { calories: Math.round(t.calories), protein: r1(t.protein), carbs: r1(t.carbs), fat: r1(t.fat), sugar: r1(t.sugar ?? 0) };
 }
 
 export const ACTIVITY: Record<ActivityLevel, { label: string; hint: string; factor: number }> = {
