@@ -262,14 +262,17 @@ export function FoodPicker({
   const [searching, setSearching] = useState(false);
 
   const query = q.trim();
-  const local = useMemo(() => {
-    const matched = searchFoods(foods, q);
-    return (category ? matched.filter((f) => f.category === category) : matched).slice(0, 60);
-  }, [foods, q, category]);
   const recent = useMemo(
     () => (query || category ? [] : foods.filter((f) => f.lastUsedAt).sort((a, b) => (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0)).slice(0, 8)),
     [foods, query, category],
   );
+  const local = useMemo(() => {
+    const matched = searchFoods(foods, q);
+    const filtered = category ? matched.filter((f) => f.category === category) : matched;
+    // With no search, "Recent" already lists those foods, so don't repeat them.
+    const shown = new Set(recent.map((f) => f.id));
+    return filtered.filter((f) => !shown.has(f.id)).slice(0, 60);
+  }, [foods, q, category, recent]);
   const onlineFoods = useMemo(() => {
     if (!online || online.q !== query) return [];
     const known = new Set(foods.map((f) => f.id));
@@ -359,7 +362,7 @@ export function FoodPicker({
             />
           </div>
 
-          <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <Chip active={category === null} onClick={() => setCategory(null)}>
               All
             </Chip>

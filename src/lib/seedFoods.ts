@@ -1,4 +1,4 @@
-import type { Food, Portion } from "./types";
+import type { Food, Macros, Portion } from "./types";
 
 /**
  * Built-in Sri Lankan food database.
@@ -105,7 +105,7 @@ const ROWS: Row[] = [
   ["Kankun, tempered", "Sambols & sides", [90, 2.6, 4, 7], VEG, ["kangkung"]],
   ["Papadam, fried", "Sambols & sides", [430, 17, 45, 20], [p("piece", 5)], ["papadum", "pappadam"]],
   ["Coconut, fresh grated", "Sambols & sides", [354, 3.3, 15, 33.5], [p("tablespoon", 8), p("cup", 90)], ["pol"]],
-  ["Coconut milk, thick", "Sambols & sides", [200, 2, 3.5, 21], [p("tablespoon", 15), p("cup", 240)], ["pol kiri"]],
+  ["Coconut milk, thick", "Sambols & sides", [230, 2.3, 5.5, 23.8], [p("tablespoon", 15), p("cup", 240)], ["pol kiri"]],
   ["Coconut oil", "Sambols & sides", [892, 0, 0, 100], [p("teaspoon", 4.5), p("tablespoon", 13.5)], ["pol thel"]],
 
   // ── Vegetables & pulses ───────────────────────────────────────────
@@ -249,7 +249,7 @@ const MORE_ROWS: Row[] = [
 
   // ── Vegetables & pulses ───────────────────────────────────────────
   ["Red lentils, dry (raw)", "Vegetables & pulses", [358, 24, 63, 2.2], [p("cup (raw)", 190), p("tablespoon", 12)], ["mysore dhal", "masoor"]],
-  ["Pumpkin, boiled", "Vegetables & pulses", [26, 1, 6.5, 0.1], [p("cup", 150)]],
+  ["Pumpkin, boiled", "Vegetables & pulses", [20, 0.7, 4.9, 0.1], [p("cup", 150)]],
   ["Spinach, cooked", "Vegetables & pulses", [23, 3, 3.8, 0.3], [p("cup", 180)], ["nivithi"]],
   ["Green beans, boiled", "Vegetables & pulses", [35, 1.9, 7.9, 0.3], [p("cup", 125)], ["bonchi"]],
   ["Soya meat, boiled", "Vegetables & pulses", [110, 16, 9, 0.6], [p("cup", 100), p("serving", 60)], ["soya chunks"]],
@@ -318,7 +318,7 @@ const MORE_ROWS: Row[] = [
   ["Ginger beer", "Drinks & dairy", [40, 0, 10, 0], [p("bottle", 400), p("glass", 250)], ["egb"]],
   ["Cream soda / cola", "Drinks & dairy", [43, 0, 10.8, 0], [p("bottle", 400), p("can", 330), p("glass", 250)], ["soda", "coke", "soft drink"]],
   ["Condensed milk", "Drinks & dairy", [321, 8, 54, 8.7], [p("tablespoon", 20), p("teaspoon", 7)]],
-  ["Cheese slice", "Drinks & dairy", [300, 18, 4, 24], [p("slice", 20)]],
+  ["Cheese slice", "Drinks & dairy", [330, 16.9, 8.6, 25.6], [p("slice", 20)]],
   ["Beer", "Drinks & dairy", [43, 0.5, 3.6, 0], [p("bottle", 625), p("can", 500), p("glass", 250)]],
 ];
 
@@ -330,7 +330,32 @@ function slug(name: string): string {
 }
 
 /** Bump when adding foods; existing accounts receive only the newer ones. */
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
+
+/**
+ * Value fixes after checking against USDA SR Legacy. Applied to existing
+ * accounts only where the stored values still equal `from` (i.e. not edited).
+ */
+export const SEED_CORRECTIONS: { version: number; id: string; from: Macros; to: Macros }[] = [
+  {
+    version: 3,
+    id: "sl-coconut-milk-thick",
+    from: { calories: 200, protein: 2, carbs: 3.5, fat: 21 },
+    to: { calories: 230, protein: 2.3, carbs: 5.5, fat: 23.8 },
+  },
+  {
+    version: 3,
+    id: "sl-pumpkin-boiled",
+    from: { calories: 26, protein: 1, carbs: 6.5, fat: 0.1 },
+    to: { calories: 20, protein: 0.7, carbs: 4.9, fat: 0.1 },
+  },
+  {
+    version: 3,
+    id: "sl-cheese-slice",
+    from: { calories: 300, protein: 18, carbs: 4, fat: 24 },
+    to: { calories: 330, protein: 16.9, carbs: 8.6, fat: 25.6 },
+  },
+];
 
 const tag = (rows: Row[], version: number) => rows.map((row) => ({ row, version }));
 

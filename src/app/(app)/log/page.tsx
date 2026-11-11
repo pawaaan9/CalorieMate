@@ -84,14 +84,16 @@ export default function LogPage() {
         title="Food log"
         subtitle={date === today ? `Today · ${formatLong(date)}` : formatLong(date)}
         action={
-          <Button onClick={() => setAddTo(mealForNow())} className="hidden md:inline-flex">
-            <Plus size={16} strokeWidth={2.5} /> Add food
-          </Button>
+          <div className="hidden md:block">
+            <Button onClick={() => setAddTo(mealForNow())}>
+              <Plus size={16} strokeWidth={2.5} /> Add food
+            </Button>
+          </div>
         }
       />
 
       {/* Date strip */}
-      <div className="no-scrollbar -mx-4 mb-5 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <div className="mb-5 grid grid-cols-8 gap-1.5 sm:flex sm:gap-2">
         {strip.map((d) => {
           const active = d === date;
           return (
@@ -100,12 +102,16 @@ export default function LogPage() {
               type="button"
               onClick={() => setDate(d)}
               aria-pressed={active}
-              className={`flex w-14 shrink-0 flex-col items-center rounded-2xl border py-2 transition ${
+              className={`flex min-w-0 flex-col items-center rounded-2xl border py-2 transition sm:w-14 sm:shrink-0 ${
                 active ? "border-accent bg-accent text-accent-fg" : "border-line bg-card text-muted hover:text-fg"
               }`}
             >
-              <span className="text-[11px] font-semibold uppercase">{d === today ? "Today" : weekdayShort(d)}</span>
+              <span className="text-[10px] font-semibold uppercase sm:text-[11px]">{weekdayShort(d)}</span>
               <span className="font-display text-lg font-bold leading-tight">{fromKey(d).getDate()}</span>
+              <span
+                aria-label={d === today ? "Today" : undefined}
+                className={`mt-0.5 h-1 w-1 rounded-full ${d === today ? (active ? "bg-accent-fg" : "bg-accent") : "bg-transparent"}`}
+              />
             </button>
           );
         })}
@@ -115,7 +121,7 @@ export default function LogPage() {
           value={date}
           max={today}
           onChange={(v) => v && setDate(v)}
-          className={`h-[62px] w-14 ${strip.includes(date) ? "" : "border-accent! bg-accent! text-accent-fg!"}`}
+          className={`h-full min-h-[64px] w-full sm:h-auto sm:w-14 ${strip.includes(date) ? "" : "border-accent! bg-accent! text-accent-fg!"}`}
         />
       </div>
 
@@ -162,7 +168,7 @@ export default function LogPage() {
           <Spinner />
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {MEALS.map((meal) => {
             const items = entries.filter((e) => e.meal === meal.id);
             const before = (yesterday ?? []).filter((e) => e.meal === meal.id);
@@ -203,7 +209,7 @@ export default function LogPage() {
                           </div>
                         </button>
                         <div className="shrink-0 text-right font-display text-sm font-bold tabular-nums">{e.calories}</div>
-                        <IconButton label={`Edit ${e.foodName}`} onClick={() => setEditing(e)} className="hidden sm:inline-flex">
+                        <IconButton label={`Edit ${e.foodName}`} onClick={() => setEditing(e)} className="max-sm:hidden!">
                           <Pencil size={15} />
                         </IconButton>
                         <IconButton label={`Delete ${e.foodName}`} className="hover:text-danger!" onClick={() => remove(e)}>

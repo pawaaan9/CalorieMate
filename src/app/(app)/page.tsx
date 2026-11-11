@@ -135,7 +135,7 @@ export default function DashboardPage() {
         </Link>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-4">
         {/* Hero: today */}
         <Card className="lg:col-span-2 xl:col-span-3">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Streak + weigh-in */}
-        <div className="grid gap-4">
+        <div className="grid min-w-0 grid-cols-1 gap-4">
           <Card className="flex items-center gap-4">
             <span
               className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${streak > 0 ? "bg-accent text-accent-fg" : "bg-raised text-muted"}`}

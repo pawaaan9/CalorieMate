@@ -78,7 +78,7 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
         void submit();
       }}
     >
-      <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Field label="Name">
           <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Amma's chicken curry" />
         </Field>

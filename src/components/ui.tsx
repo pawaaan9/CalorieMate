@@ -112,10 +112,9 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative flex max-h-[92dvh] w-full flex-col rounded-t-3xl border border-line bg-card shadow-2xl sm:max-w-lg sm:rounded-3xl">
-        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line sm:hidden" />
+      <div className="relative flex max-h-[88dvh] w-full max-w-lg flex-col rounded-3xl border border-line bg-card shadow-2xl">
         <div className="flex items-center justify-between px-5 pb-2 pt-3">
           <h2 className="text-lg font-semibold">{title}</h2>
           <IconButton label="Close" onClick={onClose}>
@@ -125,6 +124,42 @@ export function Modal({
         <div className="overflow-y-auto px-5 pb-5 pt-1">{children}</div>
       </div>
     </div>
+  );
+}
+
+export function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel,
+  danger = false,
+  busy = false,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: ReactNode;
+  confirmLabel: string;
+  danger?: boolean;
+  busy?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onCancel} title={title}>
+      <div className="space-y-5">
+        <p className="text-sm text-muted">{message}</p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={onCancel} disabled={busy}>
+            Cancel
+          </Button>
+          <Button variant={danger ? "danger" : "primary"} onClick={onConfirm} disabled={busy}>
+            {busy ? "Please wait…" : confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -214,7 +249,7 @@ export function PageHeader({
       <header className="relative mb-6 overflow-hidden rounded-3xl border border-line">
         <Image src={photo.src} alt={photo.alt} fill priority sizes="(min-width: 768px) 80vw, 100vw" className="object-cover" />
         <div className="absolute inset-0 bg-black/60" />
-        <div className="relative flex min-h-36 flex-wrap items-end justify-between gap-3 p-5 sm:min-h-44 sm:p-7">
+        <div className="relative flex min-h-36 flex-col items-start justify-end gap-3 p-5 sm:min-h-44 sm:flex-row sm:items-end sm:justify-between sm:p-7">
           <div className="min-w-0">
             <h1 className="text-[28px] font-bold leading-tight tracking-tight text-white sm:text-[32px]">{title}</h1>
             {subtitle && <p className="mt-1 text-sm text-white/75">{subtitle}</p>}
@@ -275,7 +310,7 @@ export function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-sm font-medium transition ${
+      className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium transition sm:h-9 sm:px-3.5 sm:text-sm ${
         active ? "border-accent bg-accent text-accent-fg" : "border-line bg-raised text-muted hover:text-fg"
       }`}
     >

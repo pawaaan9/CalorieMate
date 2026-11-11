@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { formatFull, fromKey, toKey, todayKey } from "@/lib/dates";
 
@@ -43,21 +43,36 @@ export function DatePicker({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<CSSProperties>({});
+  const [centered, setCentered] = useState(false);
 
   const place = useCallback(() => {
     const r = triggerRef.current?.getBoundingClientRect();
     if (!r) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    // Phones: show the calendar centred over a dimmed background.
+    if (vw < 640) {
+      setCentered(true);
+      setPos({
+        position: "fixed",
+        left: "50%",
+        top: "50%",
+        transform: "translate(-50%, -50%)",
+        width: Math.min(340, vw - 32),
+      });
+      return;
+    }
+    setCentered(false);
     const width = Math.min(PANEL_W, vw - 16);
     const left = Math.min(Math.max(8, r.left), vw - width - 8);
     const below = vh - r.bottom >= PANEL_H + 8 || r.top < PANEL_H + 8;
     setPos({ position: "fixed", left, width, ...(below ? { top: r.bottom + 8 } : { bottom: vh - r.top + 8 }) });
   }, []);
 
-  useLayoutEffect(() => {
-    if (open) place();
-  }, [open, place]);
+  const toggle = () => {
+    if (!open) place();
+    setOpen(!open);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -96,7 +111,7 @@ export function DatePicker({
           type="button"
           aria-label={label}
           aria-expanded={open}
-          onClick={() => setOpen((o) => !o)}
+          onClick={toggle}
           className={`flex shrink-0 items-center justify-center rounded-2xl border transition ${
             open ? "border-accent text-accent" : "border-line bg-card text-muted hover:text-fg"
           } ${className}`}
@@ -109,7 +124,7 @@ export function DatePicker({
           type="button"
           aria-label={label}
           aria-expanded={open}
-          onClick={() => setOpen((o) => !o)}
+          onClick={toggle}
           className={`flex h-11 w-full min-w-0 items-center gap-2.5 rounded-2xl border bg-raised px-3.5 text-left text-sm transition ${
             open ? "border-accent ring-2 ring-accent/20" : "border-line hover:border-accent/50"
           } ${className}`}
@@ -124,7 +139,9 @@ export function DatePicker({
 
       {open &&
         createPortal(
-          <div ref={panelRef} style={pos} className="z-[70]" role="dialog" aria-label={label}>
+          <>
+            {centered && <div aria-hidden className="fixed inset-0 z-[69] bg-black/70 backdrop-blur-sm" />}
+          <div ref={panelRef} style={pos} className="z-[70]" role="dialog" aria-modal={centered} aria-label={label}>
             <Calendar
               value={value}
               min={min}
@@ -144,7 +161,8 @@ export function DatePicker({
                 </div>
               }
             />
-          </div>,
+          </div>
+          </>,
           document.body,
         )}
     </>

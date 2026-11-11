@@ -41,6 +41,12 @@
   --font-display: "Google Sans", "Mulish", ui-sans-serif, system-ui, sans-serif;
 }
 
+html,
+body {
+  /* clip (not hidden) keeps sticky headers working */
+  overflow-x: clip;
+}
+
 body {
   background: var(--bg);
   color: var(--fg);
@@ -60,6 +66,17 @@ h3,
 ::selection {
   background: var(--accent);
   color: var(--accent-fg);
+}
+
+/* Number fields: type with the keyboard, no up/down spinners */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .no-scrollbar {

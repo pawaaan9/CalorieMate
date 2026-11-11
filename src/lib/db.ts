@@ -14,12 +14,13 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { macrosFor, sumMacros } from "./nutrition";
-import { SEED_FOODS, SEED_VERSION } from "./seedFoods";
+import { SEED_CORRECTIONS, SEED_FOODS, SEED_VERSION } from "./seedFoods";
 import {
   DEFAULT_PROFILE,
   type DailySummary,
   type Entry,
   type Food,
+  type Macros,
   type Meal,
   type Portion,
   type Profile,
@@ -67,10 +68,18 @@ export async function ensureUserSetup(uid: string, email: string | null): Promis
   }
   const have = (snap.data().seedVersion as number | undefined) ?? 1;
   if (have >= SEED_VERSION) return;
-  const existing = new Set((await getDocs(foodsCol(uid))).docs.map((d) => d.id));
+  const existing = new Map((await getDocs(foodsCol(uid))).docs.map((d) => [d.id, d.data() as Food]));
   const batch = writeBatch(db);
   for (const food of SEED_FOODS) {
     if (food.seedVersion > have && !existing.has(food.id)) batch.set(doc(foodsCol(uid), food.id), foodData(food));
+  }
+  const same = (a: Macros, b: Macros) =>
+    a.calories === b.calories && a.protein === b.protein && a.carbs === b.carbs && a.fat === b.fat;
+  for (const fix of SEED_CORRECTIONS) {
+    const current = existing.get(fix.id);
+    if (fix.version > have && current?.per100g && same(current.per100g, fix.from)) {
+      batch.set(doc(foodsCol(uid), fix.id), { per100g: fix.to }, { merge: true });
+    }
   }
   batch.set(userRef(uid), { seedVersion: SEED_VERSION }, { merge: true });
   await batch.commit();

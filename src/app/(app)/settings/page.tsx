@@ -5,7 +5,7 @@ import { Check, LogOut, RotateCcw } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { DatePicker } from "@/components/DatePicker";
 import { useAuth, useData } from "@/components/Providers";
-import { Button, Card, CardTitle, ErrorNote, Field, Input, PageHeader, Select } from "@/components/ui";
+import { Button, Card, CardTitle, ConfirmDialog, ErrorNote, Field, Input, PageHeader, Select } from "@/components/ui";
 import { ageFrom, todayKey } from "@/lib/dates";
 import { saveProfile, saveWeight, seedDefaultFoods } from "@/lib/db";
 import { auth } from "@/lib/firebase";
@@ -87,11 +87,11 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
   const number = { type: "number", inputMode: "decimal", step: "any", min: "0" } as const;
 
   return (
-    <form onSubmit={submit} onChange={touch} className="grid gap-4 lg:grid-cols-2">
+    <form onSubmit={submit} onChange={touch} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
         <CardTitle>About you</CardTitle>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
             <Field label="Name">
               <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
             </Field>
@@ -156,7 +156,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
         <CardTitle hint="Estimated with the Mifflin-St Jeor equation from your sex, age, height, current weight and activity level.">
           Daily calorie target
         </CardTitle>
-        <div className="grid gap-4 md:grid-cols-[minmax(0,14rem)_1fr]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
           <Field label="My daily target (kcal)">
             <Input {...number} step="10" value={calories} onChange={(e) => setCalories(e.target.value)} />
           </Field>
@@ -169,7 +169,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
                   Estimated needs: <span className="font-medium text-fg">{maintenance} kcal</span> a day to maintain (resting
                   rate {base} kcal). Pick one to use it:
                 </p>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {options.map((o) => {
                     const active = Math.round(n.calories) === o.calories;
                     return (
@@ -196,16 +196,21 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
         </div>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-3 lg:col-span-2">
-        <Button type="submit" disabled={busy}>
+      <div className="flex flex-col gap-3 rounded-3xl border border-line bg-card p-4 sm:flex-row sm:items-center sm:p-5 lg:col-span-2">
+        <div className="min-w-0 flex-1 text-sm">
+          {error ? (
+            <ErrorNote>{error}</ErrorNote>
+          ) : saved ? (
+            <span className="inline-flex items-center gap-1.5 font-semibold text-accent">
+              <Check size={16} /> Saved
+            </span>
+          ) : (
+            <span className="text-muted">Changes apply to your dashboard and daily target once saved.</span>
+          )}
+        </div>
+        <Button type="submit" size="lg" disabled={busy} className="w-full sm:w-auto">
           {busy ? "Saving…" : "Save goals and settings"}
         </Button>
-        {saved && (
-          <span className="inline-flex items-center gap-1 text-sm text-accent">
-            <Check size={15} /> Saved
-          </span>
-        )}
-        {error && <ErrorNote>{error}</ErrorNote>}
       </div>
     </form>
   );
@@ -216,6 +221,8 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const [restoring, setRestoring] = useState(false);
   const [restoreNote, setRestoreNote] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<"signout" | "restore" | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   async function restore() {
     setRestoring(true);
@@ -241,23 +248,49 @@ export default function SettingsPage() {
       />
       <SettingsForm profile={profile} currentWeightKg={currentWeightKg ?? profile.startWeightKg} hasWeighIns={weights.length > 0} />
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardTitle hint="Re-adds the built-in Sri Lankan foods and resets any you edited. Your own foods are kept.">
             Food database
           </CardTitle>
-          <Button variant="secondary" onClick={restore} disabled={restoring}>
+          <Button variant="secondary" onClick={() => setConfirm("restore")} disabled={restoring}>
             <RotateCcw size={15} /> {restoring ? "Restoring…" : "Restore built-in foods"}
           </Button>
           {restoreNote && <p className="mt-2 text-sm text-muted">{restoreNote}</p>}
         </Card>
         <Card>
           <CardTitle hint={user?.email ?? undefined}>Account</CardTitle>
-          <Button variant="secondary" onClick={() => signOut(auth)}>
+          <Button variant="secondary" onClick={() => setConfirm("signout")}>
             <LogOut size={15} /> Sign out
           </Button>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={confirm === "signout"}
+        title="Sign out?"
+        message={`You'll need your email and password to sign back in${user?.email ? ` as ${user.email}` : ""}. Your data stays saved.`}
+        confirmLabel="Sign out"
+        danger
+        busy={signingOut}
+        onCancel={() => setConfirm(null)}
+        onConfirm={async () => {
+          setSigningOut(true);
+          await signOut(auth);
+        }}
+      />
+      <ConfirmDialog
+        open={confirm === "restore"}
+        title="Restore built-in foods?"
+        message="This re-adds every built-in Sri Lankan food and resets any you have edited back to the original values. Foods you created yourself and entries you have logged are not changed."
+        confirmLabel="Restore foods"
+        busy={restoring}
+        onCancel={() => setConfirm(null)}
+        onConfirm={async () => {
+          await restore();
+          setConfirm(null);
+        }}
+      />
     </>
   );
 }

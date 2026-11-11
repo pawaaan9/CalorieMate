@@ -50,7 +50,7 @@ export default function FoodsPage() {
           <Search size={17} className="pointer-events-none absolute left-3.5 top-3.5 text-muted" />
           <Input placeholder="Search by name, e.g. parippu" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+        <div className="flex flex-wrap gap-2">
           <Chip active={category === "all"} onClick={() => setCategory("all")}>
             All
           </Chip>
@@ -76,24 +76,33 @@ export default function FoodsPage() {
         ) : (
           <ul className="divide-y divide-line">
             {visible.map((f) => (
-              <li key={f.id} className="flex items-center gap-3 px-4 py-3 transition hover:bg-raised/60">
-                <FoodAvatar category={f.category} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-semibold">{f.name}</span>
-                    {f.estimated && <EstimatedBadge />}
+              <li key={f.id} className="flex items-center gap-2 px-3 py-3 transition hover:bg-raised/60 sm:px-4">
+                <button
+                  type="button"
+                  onClick={() => setForm({ food: f })}
+                  aria-label={`Edit ${f.name}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
+                  <FoodAvatar category={f.category} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-1.5">
+                      <span className="line-clamp-2 text-sm font-semibold leading-snug">{f.name}</span>
+                      {f.estimated && <EstimatedBadge />}
+                    </div>
+                    <div className="truncate text-xs text-muted">
+                      {f.brand ? `${f.brand} · ` : ""}
+                      {f.category}
+                      <span className="hidden sm:inline"> · {SOURCE_LABEL[f.source]}</span>
+                    </div>
+                    <div className="mt-0.5 whitespace-nowrap text-xs tabular-nums text-muted">
+                      <span className="font-semibold text-accent">{f.per100g.calories} kcal</span>
+                      <span className="hidden sm:inline"> per 100 g</span> · P {Math.round(f.per100g.protein)} · C{" "}
+                      {Math.round(f.per100g.carbs)} · F {Math.round(f.per100g.fat)}
+                    </div>
                   </div>
-                  <div className="truncate text-xs text-muted">
-                    {f.brand ? `${f.brand} · ` : ""}
-                    {f.category} · {SOURCE_LABEL[f.source]}
-                  </div>
-                  <div className="mt-0.5 truncate text-xs tabular-nums text-muted">
-                    per 100 g · <span className="font-semibold text-accent">{f.per100g.calories} kcal</span> · P {f.per100g.protein} · C{" "}
-                    {f.per100g.carbs} · F {f.per100g.fat}
-                  </div>
-                </div>
+                </button>
                 {confirming === f.id ? (
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-1.5">
                     <Button variant="danger" size="sm" onClick={() => remove(f)}>
                       Delete
                     </Button>
@@ -103,10 +112,10 @@ export default function FoodsPage() {
                   </div>
                 ) : (
                   <>
-                    <IconButton label={`Edit ${f.name}`} onClick={() => setForm({ food: f })}>
+                    <IconButton label={`Edit ${f.name}`} onClick={() => setForm({ food: f })} className="max-sm:hidden!">
                       <Pencil size={15} />
                     </IconButton>
-                    <IconButton label={`Delete ${f.name}`} className="hover:text-danger" onClick={() => setConfirming(f.id)}>
+                    <IconButton label={`Delete ${f.name}`} className="hover:text-danger!" onClick={() => setConfirming(f.id)}>
                       <Trash2 size={15} />
                     </IconButton>
                   </>
@@ -118,7 +127,7 @@ export default function FoodsPage() {
       </Card>
 
       <p className="mt-4 text-xs text-muted">
-        Deleting a food does not change entries you have already logged. Built-in Sri Lankan foods can be restored from Settings.
+        Tap a food to edit it. Values are per 100 g. Deleting a food does not change entries you have already logged. Built-in Sri Lankan foods can be restored from Settings.
       </p>
 
       <FoodFormModal open={form !== null} food={form?.food ?? null} onClose={() => setForm(null)} />

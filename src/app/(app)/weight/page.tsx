@@ -76,14 +76,14 @@ export default function WeightPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-        <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <div className="min-w-0 space-y-4">
           <Card>
             <CardTitle hint="Once a week is enough. Same day and time gives the clearest trend.">
               {existing ? "Update weigh-in" : "Add weigh-in"}
             </CardTitle>
             <form onSubmit={submit} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Weight (kg)">
                   <Input
                     type="number"
@@ -126,8 +126,10 @@ export default function WeightPage() {
               ].map(([label, value]) => (
                 <div key={label}>
                   <div className="text-xs text-muted">{label}</div>
-                  <div className="font-display text-xl font-bold tabular-nums">{(value as number).toFixed(1)}</div>
-                  <div className="text-xs text-muted">kg</div>
+                  <div className="whitespace-nowrap font-display text-xl font-bold tabular-nums">
+                    {(value as number).toFixed(1)}
+                    <span className="ml-0.5 text-xs font-medium text-muted">kg</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -143,7 +145,7 @@ export default function WeightPage() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Card>
             <CardTitle>Weight over time</CardTitle>
             {weights.length >= 2 ? (
@@ -163,65 +165,64 @@ export default function WeightPage() {
             {history.length === 0 ? (
               <p className="px-4 pb-8 pt-2 text-center text-sm text-muted">No weigh-ins yet.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-y border-line text-left text-xs text-muted">
-                      <th className="px-4 py-2 font-medium sm:px-5">Date</th>
-                      <th className="px-2 py-2 text-right font-medium">Weight</th>
-                      <th className="px-2 py-2 text-right font-medium">Change</th>
-                      <th className="px-2 py-2 text-right font-medium">From start</th>
-                      <th className="px-2 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {history.map((w, i) => {
-                      const prev = history[i + 1];
-                      const delta = prev ? w.weightKg - prev.weightKg : null;
-                      return (
-                        <tr key={w.date}>
-                          <td className="px-4 py-2.5 sm:px-5">
-                            <div className="whitespace-nowrap">{formatFull(w.date)}</div>
-                            {w.note && <div className="max-w-48 truncate text-xs text-muted">{w.note}</div>}
-                          </td>
-                          <td className="px-2 py-2.5 text-right font-medium tabular-nums">{w.weightKg.toFixed(1)} kg</td>
-                          <td className="px-2 py-2.5 text-right tabular-nums text-muted">{delta === null ? "–" : signed(delta)}</td>
-                          <td className="px-2 py-2.5 text-right tabular-nums text-muted">{signed(w.weightKg - start)}</td>
-                          <td className="px-2 py-2.5">
-                            {confirming === w.date ? (
-                              <div className="flex justify-end gap-1">
-                                <Button variant="danger" size="sm" onClick={() => remove(w.date)}>
-                                  Delete
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => setConfirming(null)}>
-                                  Keep
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex justify-end">
-                                <IconButton
-                                  label={`Edit ${formatFull(w.date)}`}
-                                  onClick={() => {
-                                    setDate(w.date);
-                                    setWeight(String(w.weightKg));
-                                    setNote(w.note ?? "");
-                                    window.scrollTo({ top: 0, behavior: "smooth" });
-                                  }}
-                                >
-                                  <Pencil size={15} />
-                                </IconButton>
-                                <IconButton label={`Delete ${formatFull(w.date)}`} className="hover:text-danger" onClick={() => setConfirming(w.date)}>
-                                  <Trash2 size={15} />
-                                </IconButton>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <ul className="divide-y divide-line border-t border-line">
+                {history.map((w, i) => {
+                  const prev = history[i + 1];
+                  const delta = prev ? w.weightKg - prev.weightKg : null;
+                  const fromStart = w.weightKg - start;
+                  const towardTarget = delta !== null && (target <= start ? delta < 0 : delta > 0);
+                  return (
+                    <li key={w.date} className="flex items-center gap-3 px-4 py-3 sm:px-5">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold">{formatFull(w.date)}</div>
+                        <div className="truncate text-xs text-muted">
+                          {signed(fromStart)} kg from start{w.note ? ` · ${w.note}` : ""}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="whitespace-nowrap font-display text-lg font-bold tabular-nums leading-tight">
+                          {w.weightKg.toFixed(1)}
+                          <span className="ml-0.5 text-xs font-medium text-muted">kg</span>
+                        </div>
+                        <div
+                          className={`whitespace-nowrap text-xs font-semibold tabular-nums ${
+                            delta === null || delta === 0 ? "text-muted" : towardTarget ? "text-accent" : "text-warn"
+                          }`}
+                        >
+                          {delta === null ? "First" : `${signed(delta)} kg`}
+                        </div>
+                      </div>
+                      {confirming === w.date ? (
+                        <div className="flex shrink-0 gap-1">
+                          <Button variant="danger" size="sm" onClick={() => remove(w.date)}>
+                            Delete
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setConfirming(null)}>
+                            Keep
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex shrink-0">
+                          <IconButton
+                            label={`Edit ${formatFull(w.date)}`}
+                            onClick={() => {
+                              setDate(w.date);
+                              setWeight(String(w.weightKg));
+                              setNote(w.note ?? "");
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                          >
+                            <Pencil size={15} />
+                          </IconButton>
+                          <IconButton label={`Delete ${formatFull(w.date)}`} className="hover:text-danger!" onClick={() => setConfirming(w.date)}>
+                            <Trash2 size={15} />
+                          </IconButton>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </Card>
         </div>
