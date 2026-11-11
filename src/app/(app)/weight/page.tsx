@@ -3,6 +3,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { WeightLine } from "@/components/charts";
+import { DatePicker } from "@/components/DatePicker";
 import { useData } from "@/components/Providers";
 import { Button, Card, CardTitle, ErrorNote, Field, IconButton, Input, PageHeader, ProgressBar } from "@/components/ui";
 import { daysBetween, formatFull, formatShort, todayKey } from "@/lib/dates";
@@ -64,6 +65,7 @@ export default function WeightPage() {
   return (
     <>
       <PageHeader
+        photo={{ src: "/photos/barbell.jpg", alt: "Lifting a barbell overhead" }}
         title="Weight"
         subtitle={
           sinceLast === null
@@ -96,7 +98,7 @@ export default function WeightPage() {
                   />
                 </Field>
                 <Field label="Date">
-                  <Input type="date" max={today} required value={date} onChange={(e) => setDate(e.target.value || today)} />
+                  <DatePicker value={date} max={today} label="Weigh-in date" onChange={(v) => setDate(v || today)} />
                 </Field>
               </div>
               <Field label="Note (optional)">
@@ -108,7 +110,7 @@ export default function WeightPage() {
                 </p>
               )}
               {error && <ErrorNote>{error}</ErrorNote>}
-              <Button type="submit" disabled={busy} className="w-full">
+              <Button type="submit" size="lg" disabled={busy} className="w-full">
                 {busy ? "Saving…" : existing ? "Update weight" : "Save weight"}
               </Button>
             </form>
@@ -124,7 +126,7 @@ export default function WeightPage() {
               ].map(([label, value]) => (
                 <div key={label}>
                   <div className="text-xs text-muted">{label}</div>
-                  <div className="text-lg font-semibold tabular-nums">{(value as number).toFixed(1)}</div>
+                  <div className="font-display text-xl font-bold tabular-nums">{(value as number).toFixed(1)}</div>
                   <div className="text-xs text-muted">kg</div>
                 </div>
               ))}

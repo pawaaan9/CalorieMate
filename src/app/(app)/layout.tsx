@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DataProvider, useAuth, useData } from "@/components/Providers";
+import { ToastProvider } from "@/components/Toast";
 import { ErrorNote, Spinner } from "@/components/ui";
 
 function Gate({ children }: { children: ReactNode }) {
@@ -47,9 +48,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <DataProvider user={user}>
-      <AppShell>
-        <Gate>{children}</Gate>
-      </AppShell>
+      <ToastProvider>
+        <AppShell>
+          <Gate>{children}</Gate>
+        </AppShell>
+      </ToastProvider>
     </DataProvider>
   );
 }

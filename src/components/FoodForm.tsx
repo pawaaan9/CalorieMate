@@ -91,7 +91,7 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
         </Field>
       </div>
 
-      <fieldset className="space-y-3 rounded-xl border border-line p-3">
+      <fieldset className="space-y-3 rounded-3xl border border-line p-4">
         <legend className="px-1 text-xs font-medium text-muted">Nutrition</legend>
         <Field label="Values below are for this many grams" hint="Use 100 for per-100 g values, or the pack's serving weight.">
           <Input type="number" inputMode="decimal" min="0" step="any" value={basis} onChange={(e) => setBasis(e.target.value)} />
@@ -111,12 +111,12 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
           </Field>
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" className="h-4 w-4 accent-(--accent)" checked={estimated} onChange={(e) => setEstimated(e.target.checked)} />
+          <input type="checkbox" className="h-4 w-4 accent-[#bfee57]" checked={estimated} onChange={(e) => setEstimated(e.target.checked)} />
           These values are estimates
         </label>
       </fieldset>
 
-      <fieldset className="space-y-2 rounded-xl border border-line p-3">
+      <fieldset className="space-y-2 rounded-3xl border border-line p-4">
         <legend className="px-1 text-xs font-medium text-muted">Portions</legend>
         {portions.map((row, i) => (
           <div key={i} className="flex items-center gap-2">
@@ -149,7 +149,7 @@ function Form({ food, onClose }: { food: Food | null; onClose: () => void }) {
       </fieldset>
 
       {error && <ErrorNote>{error}</ErrorNote>}
-      <Button type="submit" disabled={busy} className="w-full">
+      <Button type="submit" size="lg" disabled={busy} className="w-full">
         {busy ? "Saving…" : food ? "Save changes" : "Add food"}
       </Button>
     </form>

@@ -27,9 +27,9 @@ function Tip({ active, payload, unit, digits = 0 }: TipProps) {
   const item = payload?.[0];
   if (!active || !item || item.value == null) return null;
   return (
-    <div className="rounded-lg border border-line bg-card px-3 py-2 shadow-md">
+    <div className="rounded-2xl border border-line bg-raised px-3 py-2 shadow-xl">
       <div className="text-xs text-muted">{item.payload?.tip}</div>
-      <div className="text-sm font-semibold tabular-nums text-fg">
+      <div className="font-display text-sm font-semibold tabular-nums text-fg">
         {item.value.toFixed(digits)} {unit}
       </div>
     </div>
@@ -52,7 +52,7 @@ export function CalorieBars({ data, goal, height = 220 }: { data: BarPoint[]; go
         <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} />
         <YAxis tick={AXIS} tickLine={false} axisLine={false} domain={[0, Math.ceil((max * 1.12) / 500) * 500]} width={52} />
         <Tooltip cursor={{ fill: "var(--subtle)" }} content={<Tip unit="kcal" />} />
-        <Bar dataKey="value" fill="var(--s1)" radius={[4, 4, 0, 0]} maxBarSize={36} isAnimationActive={false} />
+        <Bar dataKey="value" fill="var(--accent)" radius={[4, 4, 0, 0]} maxBarSize={36} isAnimationActive={false} />
         {goal > 0 && (
           <ReferenceLine
             y={goal}
@@ -95,10 +95,10 @@ export function WeightLine({ data, target, height = 240 }: { data: WeightPoint[]
         <Line
           type="monotone"
           dataKey="value"
-          stroke="var(--s3)"
+          stroke="var(--accent)"
           strokeWidth={2}
-          dot={{ r: 4, fill: "var(--s3)", stroke: "var(--card)", strokeWidth: 2 }}
-          activeDot={{ r: 6, fill: "var(--s3)", stroke: "var(--card)", strokeWidth: 2 }}
+          dot={{ r: 4, fill: "var(--accent)", stroke: "var(--card)", strokeWidth: 2 }}
+          activeDot={{ r: 6, fill: "var(--accent)", stroke: "var(--card)", strokeWidth: 2 }}
           isAnimationActive={false}
         />
       </LineChart>

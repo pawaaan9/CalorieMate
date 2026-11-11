@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { macrosFor, sumMacros } from "./nutrition";
-import { SEED_FOODS } from "./seedFoods";
+import { SEED_FOODS, SEED_VERSION } from "./seedFoods";
 import {
   DEFAULT_PROFILE,
   type DailySummary,
@@ -48,16 +48,32 @@ type OnError = (e: Error) => void;
 
 // ── Profile ─────────────────────────────────────────────────────────
 
-/** Creates the profile and seeds the Sri Lankan food database on first sign-in. */
+/**
+ * Creates the profile and seeds the Sri Lankan food database on first sign-in.
+ * For existing accounts, adds only foods introduced since their last seed, so
+ * edited foods are not overwritten and deleted ones do not come back.
+ */
 export async function ensureUserSetup(uid: string, email: string | null): Promise<void> {
   const snap = await getDoc(userRef(uid));
-  if (snap.exists()) return;
-  await seedDefaultFoods(uid);
-  await setDoc(userRef(uid), {
-    ...DEFAULT_PROFILE,
-    displayName: email ? email.split("@")[0] : "",
-    createdAt: Date.now(),
-  });
+  if (!snap.exists()) {
+    await seedDefaultFoods(uid);
+    await setDoc(userRef(uid), {
+      ...DEFAULT_PROFILE,
+      displayName: email ? email.split("@")[0] : "",
+      seedVersion: SEED_VERSION,
+      createdAt: Date.now(),
+    });
+    return;
+  }
+  const have = (snap.data().seedVersion as number | undefined) ?? 1;
+  if (have >= SEED_VERSION) return;
+  const existing = new Set((await getDocs(foodsCol(uid))).docs.map((d) => d.id));
+  const batch = writeBatch(db);
+  for (const food of SEED_FOODS) {
+    if (food.seedVersion > have && !existing.has(food.id)) batch.set(doc(foodsCol(uid), food.id), foodData(food));
+  }
+  batch.set(userRef(uid), { seedVersion: SEED_VERSION }, { merge: true });
+  await batch.commit();
 }
 
 export function subscribeProfile(uid: string, cb: (p: Profile | null) => void, onError?: OnError): Unsubscribe {
@@ -202,6 +218,26 @@ export async function updateEntry(
 export async function deleteEntry(uid: string, entry: Entry, goal: number): Promise<void> {
   await deleteDoc(doc(entriesCol(uid), entry.id));
   await refreshSummary(uid, entry.date, goal);
+}
+
+/** Puts a deleted entry back (undo). */
+export async function restoreEntry(uid: string, entry: Entry, goal: number): Promise<void> {
+  const { id, ...data } = entry;
+  await setDoc(doc(entriesCol(uid), id), data);
+  await refreshSummary(uid, entry.date, goal);
+}
+
+/** Copies entries (e.g. yesterday's breakfast) to another day. */
+export async function copyEntries(uid: string, entries: Entry[], date: string, goal: number): Promise<void> {
+  const batch = writeBatch(db);
+  const now = Date.now();
+  entries.forEach((e, i) => {
+    const { id: _id, ...data } = e;
+    void _id;
+    batch.set(doc(entriesCol(uid)), { ...data, date, createdAt: now + i });
+  });
+  await batch.commit();
+  await refreshSummary(uid, date, goal);
 }
 
 export function subscribeSummaries(

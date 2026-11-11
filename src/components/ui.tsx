@@ -1,41 +1,47 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
+import { ChevronDown, X } from "lucide-react";
+import Image from "next/image";
+import { categoryIcon, MEAL_META } from "@/lib/meta";
+import type { Meal } from "@/lib/types";
+import { createElement, useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 
 export function Card({ className = "", children }: { className?: string; children: ReactNode }) {
-  return <section className={`rounded-2xl border border-line bg-card p-4 sm:p-5 ${className}`}>{children}</section>;
+  return <section className={`rounded-3xl border border-line bg-card p-4 sm:p-5 ${className}`}>{children}</section>;
 }
 
-export function CardTitle({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
+export function CardTitle({ children, hint, action }: { children: ReactNode; hint?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-3">
-      <h2 className="text-sm font-semibold text-fg">{children}</h2>
-      {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+    <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h2 className="text-[15px] font-semibold text-fg">{children}</h2>
+        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+      </div>
+      {action}
     </div>
   );
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost" | "danger";
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 };
 
 const VARIANTS = {
-  primary: "bg-accent text-accent-fg hover:opacity-90",
-  secondary: "border border-line bg-card text-fg hover:bg-subtle",
+  primary: "bg-accent text-accent-fg font-semibold hover:brightness-110 active:scale-[0.98]",
+  secondary: "border border-line bg-raised text-fg hover:border-accent/50 active:scale-[0.98]",
   ghost: "text-muted hover:bg-subtle hover:text-fg",
-  danger: "border border-line bg-card text-danger hover:bg-subtle",
+  danger: "border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20",
 };
+
+const SIZES = { sm: "h-8 px-3 text-xs", md: "h-10 px-4 text-sm", lg: "h-12 px-5 text-base" };
 
 export function Button({ variant = "primary", size = "md", className = "", ...props }: ButtonProps) {
   return (
     <button
       type="button"
       {...props}
-      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-        size === "sm" ? "h-8 px-2.5 text-xs" : "h-10 px-4 text-sm"
-      } ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${SIZES[size]} ${VARIANTS[variant]} ${className}`}
     />
   );
 }
@@ -51,26 +57,31 @@ export function IconButton({
       aria-label={label}
       title={label}
       {...props}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-subtle hover:text-fg disabled:opacity-40 ${className}`}
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-subtle hover:text-fg disabled:opacity-30 ${className}`}
     />
   );
 }
 
 const FIELD =
-  "h-10 w-full min-w-0 rounded-lg border border-line bg-card px-3 text-sm text-fg outline-none transition placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/25";
+  "h-11 w-full min-w-0 rounded-2xl border border-line bg-raised px-3.5 text-sm text-fg outline-none transition placeholder:text-muted/60 focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 export function Input({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${FIELD} ${className}`} />;
 }
 
 export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`${FIELD} ${className}`} />;
+  return (
+    <div className="relative min-w-0">
+      <select {...props} className={`${FIELD} cursor-pointer appearance-none pr-11 ${className}`} />
+      <ChevronDown size={17} aria-hidden className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" />
+    </div>
+  );
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+      <span className="mb-1.5 block text-xs font-semibold text-muted">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-muted">{hint}</span>}
     </label>
@@ -85,7 +96,7 @@ export function Modal({
 }: {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title: ReactNode;
   children: ReactNode;
 }) {
   useEffect(() => {
@@ -101,16 +112,17 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative flex max-h-[92dvh] w-full flex-col rounded-t-2xl border border-line bg-card shadow-xl sm:max-w-lg sm:rounded-2xl">
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <h2 className="text-base font-semibold">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative flex max-h-[92dvh] w-full flex-col rounded-t-3xl border border-line bg-card shadow-2xl sm:max-w-lg sm:rounded-3xl">
+        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line sm:hidden" />
+        <div className="flex items-center justify-between px-5 pb-2 pt-3">
+          <h2 className="text-lg font-semibold">{title}</h2>
           <IconButton label="Close" onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
-        <div className="overflow-y-auto p-4">{children}</div>
+        <div className="overflow-y-auto px-5 pb-5 pt-1">{children}</div>
       </div>
     </div>
   );
@@ -119,8 +131,8 @@ export function Modal({
 export function ProgressBar({ value, max, over = false }: { value: number; max: number; over?: boolean }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-subtle">
-      <div className={`h-full rounded-full transition-all ${over ? "bg-danger" : "bg-accent"}`} style={{ width: `${pct}%` }} />
+    <div className="h-2.5 w-full overflow-hidden rounded-full bg-subtle">
+      <div className={`h-full rounded-full transition-all duration-500 ${over ? "bg-danger" : "bg-accent"}`} style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -128,15 +140,16 @@ export function ProgressBar({ value, max, over = false }: { value: number; max: 
 export function Ring({
   value,
   max,
-  size = 148,
+  size = 168,
+  stroke = 14,
   children,
 }: {
   value: number;
   max: number;
   size?: number;
+  stroke?: number;
   children: ReactNode;
 }) {
-  const stroke = 11;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
@@ -155,7 +168,7 @@ export function Ring({
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
-          className="transition-all duration-500"
+          className="transition-all duration-700"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>
@@ -167,7 +180,7 @@ export function EstimatedBadge() {
   return (
     <span
       title="Estimated nutritional values"
-      className="inline-flex shrink-0 items-center rounded-md bg-subtle px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted"
+      className="inline-flex shrink-0 items-center rounded-full border border-line px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-muted"
     >
       Est.
     </span>
@@ -184,12 +197,38 @@ export function Spinner({ className = "" }: { className?: string }) {
   );
 }
 
-export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+export function PageHeader({
+  title,
+  subtitle,
+  action,
+  photo,
+}: {
+  title: ReactNode;
+  subtitle?: string;
+  action?: ReactNode;
+  /** Optional background photo; renders the header as a banner. */
+  photo?: { src: string; alt: string };
+}) {
+  if (photo) {
+    return (
+      <header className="relative mb-6 overflow-hidden rounded-3xl border border-line">
+        <Image src={photo.src} alt={photo.alt} fill priority sizes="(min-width: 768px) 80vw, 100vw" className="object-cover" />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="relative flex min-h-36 flex-wrap items-end justify-between gap-3 p-5 sm:min-h-44 sm:p-7">
+          <div className="min-w-0">
+            <h1 className="text-[28px] font-bold leading-tight tracking-tight text-white sm:text-[32px]">{title}</h1>
+            {subtitle && <p className="mt-1 text-sm text-white/75">{subtitle}</p>}
+          </div>
+          {action}
+        </div>
+      </header>
+    );
+  }
   return (
-    <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {action}
     </header>
@@ -198,8 +237,49 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 
 export function ErrorNote({ children }: { children: ReactNode }) {
   return (
-    <p role="alert" className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+    <p role="alert" className="rounded-2xl border border-danger/40 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">
       {children}
     </p>
+  );
+}
+
+export function MealIcon({ meal, size = 20, className = "" }: { meal: Meal; size?: number; className?: string }) {
+  return createElement(MEAL_META[meal].icon, { size, strokeWidth: 2, className, "aria-hidden": true });
+}
+
+export function CategoryIcon({ category, size = 18, className = "" }: { category: string; size?: number; className?: string }) {
+  return createElement(categoryIcon(category), { size, strokeWidth: 2, className, "aria-hidden": true });
+}
+
+export function FoodAvatar({ category, size = "md" }: { category: string; size?: "sm" | "md" | "lg" }) {
+  const box = size === "sm" ? "h-9 w-9" : size === "lg" ? "h-12 w-12" : "h-10 w-10";
+  const icon = size === "sm" ? 17 : size === "lg" ? 23 : 19;
+  return (
+    <span className={`flex shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent ${box}`}>
+      <CategoryIcon category={category} size={icon} />
+    </span>
+  );
+}
+
+export function Chip({
+  active,
+  children,
+  onClick,
+}: {
+  active?: boolean;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-sm font-medium transition ${
+        active ? "border-accent bg-accent text-accent-fg" : "border-line bg-raised text-muted hover:text-fg"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

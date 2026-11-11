@@ -52,6 +52,16 @@ export function formatFull(key: string): string {
   });
 }
 
+/** Whole years between a YYYY-MM-DD birthday and today. */
+export function ageFrom(birthDate: string, today: Date = new Date()): number {
+  const b = fromKey(birthDate);
+  let age = today.getFullYear() - b.getFullYear();
+  const hadBirthday =
+    today.getMonth() > b.getMonth() || (today.getMonth() === b.getMonth() && today.getDate() >= b.getDate());
+  if (!hadBirthday) age--;
+  return age;
+}
+
 export function weekdayShort(key: string): string {
   return fromKey(key).toLocaleDateString(undefined, { weekday: "short" });
 }

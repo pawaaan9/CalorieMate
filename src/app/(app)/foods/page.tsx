@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { FoodFormModal } from "@/components/FoodForm";
 import { searchFoods } from "@/components/FoodPicker";
 import { useData } from "@/components/Providers";
-import { Button, Card, ErrorNote, EstimatedBadge, IconButton, Input, PageHeader, Select } from "@/components/ui";
+import { Button, Card, CategoryIcon, Chip, ErrorNote, EstimatedBadge, FoodAvatar, IconButton, Input, PageHeader } from "@/components/ui";
 import { deleteFood } from "@/lib/db";
 import { FOOD_CATEGORIES, SOURCE_LABEL, type Food } from "@/lib/types";
 
@@ -35,6 +35,7 @@ export default function FoodsPage() {
   return (
     <>
       <PageHeader
+        photo={{ src: "/photos/food-bowl.jpg", alt: "A bowl of fresh vegetables and chickpeas" }}
         title="Foods"
         subtitle={`${foods.length} foods in your database`}
         action={
@@ -44,17 +45,21 @@ export default function FoodsPage() {
         }
       />
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+      <div className="mb-4 space-y-3">
         <div className="relative">
-          <Search size={16} className="pointer-events-none absolute left-3 top-3 text-muted" />
-          <Input placeholder="Search by name, e.g. parippu" className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Search size={17} className="pointer-events-none absolute left-3.5 top-3.5 text-muted" />
+          <Input placeholder="Search by name, e.g. parippu" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <Select aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)} className="sm:w-52">
-          <option value="all">All categories</option>
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+          <Chip active={category === "all"} onClick={() => setCategory("all")}>
+            All
+          </Chip>
           {FOOD_CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
+            <Chip key={c} active={category === c} onClick={() => setCategory(category === c ? "all" : c)}>
+              <CategoryIcon category={c} size={15} /> {c}
+            </Chip>
           ))}
-        </Select>
+        </div>
       </div>
 
       {error && (
@@ -71,10 +76,11 @@ export default function FoodsPage() {
         ) : (
           <ul className="divide-y divide-line">
             {visible.map((f) => (
-              <li key={f.id} className="flex items-center gap-2 px-4 py-3">
+              <li key={f.id} className="flex items-center gap-3 px-4 py-3 transition hover:bg-raised/60">
+                <FoodAvatar category={f.category} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-medium">{f.name}</span>
+                    <span className="truncate text-sm font-semibold">{f.name}</span>
                     {f.estimated && <EstimatedBadge />}
                   </div>
                   <div className="truncate text-xs text-muted">
@@ -82,7 +88,7 @@ export default function FoodsPage() {
                     {f.category} · {SOURCE_LABEL[f.source]}
                   </div>
                   <div className="mt-0.5 truncate text-xs tabular-nums text-muted">
-                    per 100 g: <span className="font-medium text-fg">{f.per100g.calories} kcal</span> · P {f.per100g.protein} · C{" "}
+                    per 100 g · <span className="font-semibold text-accent">{f.per100g.calories} kcal</span> · P {f.per100g.protein} · C{" "}
                     {f.per100g.carbs} · F {f.per100g.fat}
                   </div>
                 </div>

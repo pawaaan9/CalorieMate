@@ -1,52 +1,41 @@
 "use client";
 
-import { ArrowDown, ArrowRight, ArrowUp, Plus } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Flame, Plus, Scale } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { CalorieBars, WeightLine, type BarPoint } from "@/components/charts";
 import { useData } from "@/components/Providers";
-import { Card, CardTitle, PageHeader, ProgressBar, Ring } from "@/components/ui";
+import { Card, CardTitle, MealIcon, PageHeader, ProgressBar, Ring } from "@/components/ui";
 import { addDays, daysBetween, formatFull, formatLong, formatShort, todayKey, weekStart, weekdayShort } from "@/lib/dates";
-import { useSummaries } from "@/lib/hooks";
-import type { DailySummary } from "@/lib/types";
+import { useEntries, useSummaries } from "@/lib/hooks";
+import { greeting } from "@/lib/meta";
+import { MEALS, type DailySummary } from "@/lib/types";
 
 const WEEKS = 8;
-const kg = (n: number) => `${n.toFixed(1)} kg`;
-const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n).toFixed(1)} kg`;
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="min-w-0">
-      <div className="text-xs text-muted">{label}</div>
-      <div className="text-xl font-semibold tabular-nums">{value}</div>
-      {sub && <div className="text-xs text-muted">{sub}</div>}
-    </div>
-  );
-}
-
-function MacroBar({ label, grams, calories, total, color }: { label: string; grams: number; calories: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.round((calories / total) * 100) : 0;
-  return (
-    <div>
-      <div className="mb-1 flex items-baseline justify-between text-sm">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-          {label}
-        </span>
-        <span className="tabular-nums text-muted">
-          <span className="font-medium text-fg">{Math.round(grams)} g</span> · {pct}%
-        </span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-subtle">
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
-      </div>
-    </div>
-  );
-}
+const kg = (n: number) => n.toFixed(1);
+const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n).toFixed(1)}`;
 
 function average(days: DailySummary[]): number | null {
   const logged = days.filter((d) => d.entryCount > 0);
   return logged.length ? Math.round(logged.reduce((a, d) => a + d.calories, 0) / logged.length) : null;
+}
+
+function MacroStat({ label, grams, pct, dot }: { label: string; grams: number; pct: number; dot: string }) {
+  return (
+    <div className="rounded-2xl bg-raised/70 p-3">
+      <div className="flex items-center gap-1.5 text-xs text-muted">
+        <span className={`h-2 w-2 rounded-full ${dot}`} />
+        {label}
+      </div>
+      <div className="mt-0.5 font-display text-xl font-bold tabular-nums">
+        {Math.round(grams)}
+        <span className="ml-0.5 text-xs font-medium text-muted">g</span>
+      </div>
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-subtle">
+        <div className={`h-full rounded-full ${dot}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardPage() {
@@ -54,6 +43,7 @@ export default function DashboardPage() {
   const today = todayKey();
   const from = useMemo(() => weekStart(addDays(today, -7 * (WEEKS - 1))), [today]);
   const summaries = useSummaries(uid, from);
+  const todayEntries = useEntries(uid, today);
 
   const goal = profile?.dailyCalorieTarget ?? 0;
   const todaySummary = summaries?.get(today);
@@ -85,6 +75,18 @@ export default function DashboardPage() {
   );
   const hasWeekly = weekly.some((w) => w.value !== null);
 
+  // Consecutive days with at least one entry, counting back from today (or yesterday).
+  const streak = useMemo(() => {
+    if (!summaries) return 0;
+    let day = summaries.get(today)?.entryCount ? today : addDays(today, -1);
+    let n = 0;
+    while (summaries.get(day)?.entryCount) {
+      n++;
+      day = addDays(day, -1);
+    }
+    return n;
+  }, [summaries, today]);
+
   const start = profile?.startWeightKg ?? 0;
   const target = profile?.targetWeightKg ?? 0;
   const current = currentWeightKg ?? start;
@@ -97,115 +99,209 @@ export default function DashboardPage() {
   const weekDelta = latest && previous ? latest.weightKg - previous.weightKg : null;
   const losing = target <= start;
   const dueForWeighIn = !latest || daysBetween(latest.date, today) >= 7;
+  const goodDelta = weekDelta !== null && (losing ? weekDelta < 0 : weekDelta > 0);
 
   const macroCals = {
     protein: (todaySummary?.protein ?? 0) * 4,
     carbs: (todaySummary?.carbs ?? 0) * 4,
     fat: (todaySummary?.fat ?? 0) * 9,
   };
-  const macroTotal = macroCals.protein + macroCals.carbs + macroCals.fat;
+  const macroTotal = macroCals.protein + macroCals.carbs + macroCals.fat || 1;
+  const pct = (n: number) => Math.round((n / macroTotal) * 100);
 
   return (
     <>
       <PageHeader
-        title={profile?.displayName ? `Hello, ${profile.displayName}` : "Dashboard"}
-        subtitle={formatLong(today)}
-        action={
-          <Link
-            href="/log"
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
-          >
-            <Plus size={16} /> Log food
-          </Link>
+        photo={{ src: "/photos/dumbbells.jpg", alt: "Picking up a dumbbell at the gym" }}
+        title={
+          <>
+            {greeting()}
+            {profile?.displayName ? `, ${profile.displayName}` : ""}
+          </>
         }
+        subtitle={formatLong(today)}
       />
 
       {profile && !profile.onboarded && (
         <Link
           href="/settings"
-          className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-accent"
+          className="mb-5 flex items-center justify-between gap-3 rounded-3xl border border-accent/40 bg-accent-soft px-5 py-4 text-sm text-fg"
         >
           <span>
-            <strong className="font-semibold">Set up your goals.</strong> Add your weight, height and target to get a personal
-            calorie goal.
+            <strong className="font-bold text-accent">Let&apos;s set your goals.</strong> Add your weight, height and target to get a
+            personal calorie goal.
           </span>
-          <ArrowRight size={18} className="shrink-0" />
+          <ArrowRight size={18} className="shrink-0 text-accent" />
         </Link>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Today */}
-        <Card>
-          <CardTitle>Today</CardTitle>
-          <div className="flex flex-wrap items-center gap-5">
-            <Ring value={eaten} max={goal}>
-              <span className="text-2xl font-semibold tabular-nums">{Math.abs(remaining)}</span>
-              <span className="text-xs text-muted">{remaining >= 0 ? "kcal left" : "kcal over"}</span>
+      <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-4">
+        {/* Hero: today */}
+        <Card className="lg:col-span-2 xl:col-span-3">
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+            <Ring value={eaten} max={goal} size={184} stroke={16}>
+              <span className="font-display text-4xl font-bold tabular-nums">{Math.abs(remaining).toLocaleString()}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                {remaining >= 0 ? "kcal left" : "kcal over"}
+              </span>
             </Ring>
-            <div className="min-w-40 flex-1 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Stat label="Eaten" value={`${eaten}`} sub="kcal" />
-                <Stat label="Goal" value={`${goal}`} sub="kcal" />
+            <div className="w-full min-w-0 flex-1 space-y-4">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted">Eaten today</div>
+                  <div className="font-display text-3xl font-bold tabular-nums">
+                    {eaten.toLocaleString()}
+                    <span className="ml-1 text-sm font-medium text-muted">/ {goal.toLocaleString()} kcal</span>
+                  </div>
+                </div>
+                <Link
+                  href="/log?add=1"
+                  className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-accent px-5 text-sm font-bold text-accent-fg transition hover:brightness-110"
+                >
+                  <Plus size={17} strokeWidth={2.75} /> Log food
+                </Link>
               </div>
-              <MacroBar label="Protein" grams={todaySummary?.protein ?? 0} calories={macroCals.protein} total={macroTotal} color="var(--s1)" />
-              <MacroBar label="Carbs" grams={todaySummary?.carbs ?? 0} calories={macroCals.carbs} total={macroTotal} color="var(--s2)" />
-              <MacroBar label="Fat" grams={todaySummary?.fat ?? 0} calories={macroCals.fat} total={macroTotal} color="var(--s3)" />
+              <div className="grid grid-cols-3 gap-2">
+                <MacroStat label="Protein" grams={todaySummary?.protein ?? 0} pct={pct(macroCals.protein)} dot="bg-s1" />
+                <MacroStat label="Carbs" grams={todaySummary?.carbs ?? 0} pct={pct(macroCals.carbs)} dot="bg-s2" />
+                <MacroStat label="Fat" grams={todaySummary?.fat ?? 0} pct={pct(macroCals.fat)} dot="bg-s3" />
+              </div>
             </div>
+          </div>
+        </Card>
+
+        {/* Streak + weigh-in */}
+        <div className="grid gap-4">
+          <Card className="flex items-center gap-4">
+            <span
+              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${streak > 0 ? "bg-accent text-accent-fg" : "bg-raised text-muted"}`}
+            >
+              <Flame size={28} />
+            </span>
+            <div>
+              <div className="font-display text-3xl font-bold tabular-nums leading-none">
+                {streak}
+                <span className="ml-1 text-sm font-medium text-muted">day{streak === 1 ? "" : "s"}</span>
+              </div>
+              <div className="mt-1 text-xs text-muted">
+                {streak === 0 ? "Log something today to start a streak" : streak >= 7 ? "Logging streak. Brilliant!" : "Logging streak. Keep it going!"}
+              </div>
+            </div>
+          </Card>
+          <Link
+            href="/weight"
+            className={`flex items-center gap-4 rounded-3xl border p-4 transition sm:p-5 ${
+              dueForWeighIn ? "border-accent/40 bg-accent-soft hover:border-accent" : "border-line bg-card hover:border-accent/40"
+            }`}
+          >
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-raised text-accent">
+              <Scale size={26} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-display text-3xl font-bold tabular-nums leading-none">
+                {kg(current)}
+                <span className="ml-1 text-sm font-medium text-muted">kg</span>
+              </div>
+              <div className="mt-1 text-xs text-muted">
+                {dueForWeighIn ? "Time for this week's weigh-in" : `Weighed ${formatShort(latest!.date)}`}
+              </div>
+            </div>
+            <ArrowRight size={18} className="shrink-0 text-muted" />
+          </Link>
+        </div>
+
+        {/* Today's meals */}
+        <Card className="lg:col-span-3 xl:col-span-4">
+          <CardTitle
+            action={
+              <Link href="/log" className="text-sm font-semibold text-accent hover:underline">
+                Open log
+              </Link>
+            }
+          >
+            Today&apos;s meals
+          </CardTitle>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {MEALS.map((m) => {
+              const items = (todayEntries ?? []).filter((e) => e.meal === m.id);
+              const kcal = items.reduce((a, e) => a + e.calories, 0);
+              return (
+                <Link
+                  key={m.id}
+                  href={`/log?meal=${m.id}`}
+                  className="group flex flex-col rounded-2xl border border-line bg-raised/60 p-3.5 transition hover:border-accent/50"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+                      <MealIcon meal={m.id} />
+                    </span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft text-accent transition group-hover:bg-accent group-hover:text-accent-fg">
+                      <Plus size={15} strokeWidth={2.75} />
+                    </span>
+                  </div>
+                  <div className="mt-2 text-sm font-bold">{m.label}</div>
+                  <div className="truncate text-xs text-muted">
+                    {items.length ? `${kcal} kcal · ${items.length} item${items.length === 1 ? "" : "s"}` : "Not logged yet"}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </Card>
 
         {/* Weight goal */}
         <Card>
           <CardTitle>Weight goal</CardTitle>
-          <div className="grid grid-cols-3 gap-3">
-            <Stat label="Start" value={kg(start)} />
-            <Stat label="Current" value={kg(current)} sub={latest ? formatShort(latest.date) : "no weigh-ins yet"} />
-            <Stat label="Target" value={kg(target)} />
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {(
+              [
+                ["Start", start, ""],
+                ["Now", current, "text-accent"],
+                ["Target", target, ""],
+              ] as const
+            ).map(([label, v, cls]) => (
+              <div key={label} className="rounded-2xl bg-raised/70 py-2.5">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</div>
+                <div className={`font-display text-xl font-bold tabular-nums ${cls}`}>{kg(v)}</div>
+              </div>
+            ))}
           </div>
           <div className="mt-4">
             <ProgressBar value={progress} max={1} />
-            <div className="mt-1.5 flex justify-between text-xs text-muted">
-              <span>{Math.round(progress * 100)}% of the way</span>
+            <div className="mt-2 flex justify-between text-xs text-muted">
+              <span className="font-semibold text-fg">{Math.round(progress * 100)}%</span>
               <span>{Math.abs(toGo) < 0.05 ? "Target reached" : `${Math.abs(toGo).toFixed(1)} kg to go`}</span>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
-            <Stat
-              label={change <= 0 ? "Total lost" : "Total gained"}
-              value={kg(Math.abs(change))}
-              sub="since starting weight"
-            />
+            <div>
+              <div className="text-xs text-muted">{change <= 0 ? "Total lost" : "Total gained"}</div>
+              <div className="font-display text-xl font-bold tabular-nums">{Math.abs(change).toFixed(1)} kg</div>
+            </div>
             <div>
               <div className="text-xs text-muted">Since last weigh-in</div>
               {weekDelta === null ? (
-                <div className="text-sm text-muted">Needs two weigh-ins</div>
+                <div className="text-sm text-muted">Needs 2 weigh-ins</div>
               ) : (
-                <div className="flex items-center gap-1 text-xl font-semibold tabular-nums">
-                  {weekDelta !== 0 &&
-                    (weekDelta < 0 ? <ArrowDown size={18} className={losing ? "text-accent" : "text-warn"} /> : <ArrowUp size={18} className={losing ? "text-warn" : "text-accent"} />)}
-                  {signed(weekDelta)}
+                <div className={`flex items-center gap-0.5 font-display text-xl font-bold tabular-nums ${goodDelta ? "text-accent" : weekDelta === 0 ? "" : "text-warn"}`}>
+                  {weekDelta < 0 ? <ArrowDownRight size={18} /> : weekDelta > 0 ? <ArrowUpRight size={18} /> : null}
+                  {signed(weekDelta)} kg
                 </div>
               )}
-              {previous && <div className="text-xs text-muted">vs {formatShort(previous.date)}</div>}
             </div>
           </div>
-          {dueForWeighIn && (
-            <Link href="/weight" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
-              Time for this week&apos;s weigh-in <ArrowRight size={15} />
-            </Link>
-          )}
         </Card>
 
         {/* Last 7 days */}
-        <Card>
-          <CardTitle hint={avg7 !== null ? `Average ${avg7} kcal a day on logged days` : "Nothing logged in the last 7 days"}>
+        <Card className="lg:col-span-2 xl:col-span-3">
+          <CardTitle hint={avg7 !== null ? `Average ${avg7.toLocaleString()} kcal a day on logged days` : "Nothing logged in the last 7 days"}>
             Calories, last 7 days
           </CardTitle>
           <CalorieBars data={last7} goal={goal} />
         </Card>
 
         {/* Weekly averages */}
-        <Card>
+        <Card className="lg:col-span-3 xl:col-span-2">
           <CardTitle hint="Average daily calories per week, logged days only">Weekly calorie averages</CardTitle>
           {hasWeekly ? (
             <CalorieBars data={weekly} goal={goal} />
@@ -215,7 +311,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Weight chart */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-3 xl:col-span-2">
           <CardTitle hint={weights.length ? `${weights.length} weigh-in${weights.length === 1 ? "" : "s"} recorded` : undefined}>
             Weight progress
           </CardTitle>
@@ -227,7 +323,7 @@ export default function DashboardPage() {
           ) : (
             <p className="py-16 text-center text-sm text-muted">
               Record at least two weigh-ins on the{" "}
-              <Link href="/weight" className="font-medium text-accent hover:underline">
+              <Link href="/weight" className="font-semibold text-accent hover:underline">
                 Weight page
               </Link>{" "}
               to see your progress chart.

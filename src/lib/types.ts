@@ -90,6 +90,8 @@ export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "ver
 export interface Profile {
   displayName: string;
   sex: Sex;
+  /** YYYY-MM-DD. Age is calculated from this when set. */
+  birthDate?: string;
   age: number;
   heightCm: number;
   startWeightKg: number;

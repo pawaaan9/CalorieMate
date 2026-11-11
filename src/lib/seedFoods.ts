@@ -174,6 +174,154 @@ const ROWS: Row[] = [
   ["Butter", "Drinks & dairy", [717, 0.9, 0.1, 81], [p("teaspoon", 5), p("tablespoon", 14)]],
 ];
 
+const MORE_ROWS: Row[] = [
+  // ── Rice & staples ────────────────────────────────────────────────
+  ["Red string hoppers", "Rice & staples", [125, 2.6, 27, 0.6], [p("piece", 22), p("serving (10 pieces)", 220)], ["rathu indi appa", "red idiyappam"]],
+  ["Kurakkan string hoppers", "Rice & staples", [130, 3, 27, 0.9], [p("piece", 22), p("serving (10 pieces)", 220)], ["finger millet", "ragi"]],
+  ["Kurakkan roti", "Rice & staples", [260, 7, 44, 6.5], [p("piece", 70)], ["finger millet roti", "ragi roti"]],
+  ["Kurakkan pittu", "Rice & staples", [195, 4.5, 34, 4.5], [p("piece (cylinder)", 100), p("cup", 130)], ["ragi pittu"]],
+  ["Red rice pittu", "Rice & staples", [205, 3.8, 36, 5], [p("piece (cylinder)", 100), p("cup", 130)], ["rathu pittu"]],
+  ["Dhal roti", "Rice & staples", [270, 8, 40, 8.5], [p("piece", 70)], ["parippu roti"]],
+  ["Chapati", "Rice & staples", [300, 9, 46, 9], [p("piece", 40)], ["chapathi"]],
+  ["Masala thosai", "Rice & staples", [175, 4, 26, 6.5], [p("piece", 150)], ["masala dosa"]],
+  ["Uppuma", "Rice & staples", [150, 3.5, 22, 5.5], [p("cup", 200), p("serving", 150)], ["upma", "rava"]],
+  ["Mung kiribath", "Rice & staples", [165, 4.5, 27, 4.5], [p("piece", 100)], ["mung eta kiribath"]],
+  ["Lamprais", "Rice & staples", [185, 8, 20, 8], [p("packet", 400)], ["lump rice"]],
+  ["Mutton biryani", "Rice & staples", [195, 9, 21, 8.5], RICE, ["mutton buriyani"]],
+  ["Seafood fried rice", "Rice & staples", [170, 7, 23, 5.5], RICE],
+  ["Nasi goreng", "Rice & staples", [180, 7, 22, 7], [p("plate", 400), p("cup", 180)]],
+  ["Dolphin kottu", "Rice & staples", [200, 8, 22, 9], [p("full portion", 450), p("half portion", 250)], ["dolphin koththu"]],
+  ["Instant noodles, cooked", "Rice & staples", [140, 3.5, 19, 5.5], [p("packet (cooked)", 300), p("cup", 180)], ["maggi", "noodles"]],
+  ["Roast paan", "Rice & staples", [280, 9, 52, 3.5], [p("slice", 40), p("quarter", 120)], ["roast bread"]],
+  ["Tea bun", "Rice & staples", [320, 8, 55, 7.5], [p("piece", 70)], ["sweet bun", "seeni banis"]],
+  ["Kimbula bun", "Rice & staples", [380, 7, 52, 16], [p("piece", 60)], ["crocodile bun"]],
+  ["Breadfruit, boiled", "Rice & staples", [100, 1.1, 25, 0.3], [p("cup", 150), p("piece", 60)], ["del tambapu"]],
+  ["Jackfruit seeds, boiled", "Rice & staples", [185, 7, 38, 0.4], [p("tablespoon", 15), p("cup", 140)], ["kos ata"]],
+  ["Corn on the cob, boiled", "Rice & staples", [96, 3.4, 21, 1.5], [p("cob", 120)], ["bada iringu", "corn"]],
+  ["Potato, boiled", "Rice & staples", [87, 1.9, 20, 0.1], [p("medium", 150), p("cup", 150)], ["ala"]],
+
+  // ── Curries ───────────────────────────────────────────────────────
+  ["Chicken white curry", "Curries", [170, 14, 3, 11.5], [p("piece with gravy", 80), ...CURRY], ["kukul mas kiri hodi"]],
+  ["Chicken liver curry", "Curries", [170, 17, 4, 9.5], CURRY],
+  ["Duck curry", "Curries", [220, 15, 3, 16.5], CURRY, ["thara"]],
+  ["Fish red curry (mirisata)", "Curries", [130, 17, 3, 5.5], [p("piece with gravy", 70), ...CURRY], ["malu mirisata", "tuna curry", "balaya"]],
+  ["Crab curry", "Curries", [110, 12, 3, 5.5], CURRY, ["kakuluwo", "jaffna crab"]],
+  ["Dried fish curry", "Curries", [150, 15, 4, 8], CURRY, ["karawala hodi", "karawala curry"]],
+  ["Devilled prawns", "Curries", [150, 15, 8, 6.5], CURRY, ["prawn devilled", "isso devilled"]],
+  ["Devilled beef", "Curries", [215, 18, 8, 12], CURRY, ["beef devilled"]],
+  ["Devilled pork", "Curries", [260, 15, 8, 19], CURRY, ["pork devilled"]],
+  ["Devilled fish", "Curries", [190, 16, 9, 10], CURRY, ["fish devilled"]],
+  ["Devilled sausages", "Curries", [260, 10, 10, 20], CURRY],
+  ["Hot butter cuttlefish", "Curries", [240, 13, 20, 12], CURRY, ["hot butter squid"]],
+  ["Jackfruit seed curry", "Curries", [150, 4, 20, 6], CURRY, ["kos ata curry"]],
+  ["Bitter gourd curry", "Curries", [95, 1.8, 8, 6.5], VEG, ["karawila curry"]],
+  ["Snake gourd curry", "Curries", [65, 1.2, 5, 4.5], VEG, ["pathola"]],
+  ["Ash gourd curry", "Curries", [55, 0.7, 5, 3.5], VEG, ["puhul"]],
+  ["Drumstick curry", "Curries", [85, 2.3, 7, 5.5], VEG, ["murunga"]],
+  ["Long bean curry", "Curries", [80, 2.3, 7, 5], VEG, ["ma karal", "me karal"]],
+  ["Winged bean curry", "Curries", [80, 2.5, 6, 5.5], VEG, ["dambala"]],
+  ["Leeks, tempered", "Curries", [95, 1.5, 9, 6], VEG, ["leeks thel dala"]],
+  ["Lotus root curry", "Curries", [100, 2, 12, 5], VEG, ["nelum ala"]],
+  ["Kohila curry", "Curries", [105, 2, 14, 5], VEG],
+  ["Banana blossom curry", "Curries", [95, 2, 9, 6], VEG, ["kesel muwa"]],
+  ["Mixed vegetable curry", "Curries", [90, 1.8, 8, 6], VEG, ["elawalu"]],
+  ["Dhal with spinach", "Curries", [110, 6, 13, 4], CURRY, ["parippu nivithi"]],
+
+  // ── Meat, fish & eggs ─────────────────────────────────────────────
+  ["Grilled fish (seer / tuna)", "Meat, fish & eggs", [140, 25, 0, 4], [p("piece", 100)], ["thora", "balaya", "grilled fish"]],
+  ["Tuna, canned in brine", "Meat, fish & eggs", [116, 26, 0, 0.8], [p("can (drained)", 120), p("tablespoon", 15)]],
+  ["Egg white", "Meat, fish & eggs", [52, 11, 0.7, 0.2], [p("piece", 33)]],
+  ["Chicken sausage", "Meat, fish & eggs", [230, 12, 6, 18], [p("piece", 40)], ["sausages"]],
+  ["Prawns, fried", "Meat, fish & eggs", [240, 20, 10, 13], [p("serving", 100), p("piece", 12)], ["isso bedum"]],
+  ["BBQ chicken", "Meat, fish & eggs", [190, 27, 2, 8], [p("piece", 120), p("serving", 100)], ["grilled chicken", "tandoori"]],
+  ["Dried fish, fried", "Meat, fish & eggs", [300, 45, 3, 12], SAMBOL, ["karawala bedum"]],
+
+  // ── Sambols & sides ───────────────────────────────────────────────
+  ["Malay pickle", "Sambols & sides", [210, 1.5, 38, 6], SAMBOL, ["malay achcharu", "achcharu"]],
+  ["Lime pickle", "Sambols & sides", [180, 1, 20, 11], [p("teaspoon", 8), p("tablespoon", 15)], ["dehi achcharu"]],
+  ["Coconut chutney", "Sambols & sides", [220, 3, 10, 19], SAMBOL, ["pol chutney"]],
+  ["Mint sambol", "Sambols & sides", [150, 3, 8, 12], SAMBOL, ["minchi sambol"]],
+  ["Tomato sambol", "Sambols & sides", [80, 1.5, 7, 5], SAMBOL, ["thakkali sambol"]],
+  ["Bitter gourd sambol", "Sambols & sides", [110, 2, 9, 7.5], SAMBOL, ["karawila sambol"]],
+  ["Kathurumurunga mallum", "Sambols & sides", [95, 3.5, 7, 6], VEG, ["kathurumurunga"]],
+  ["Thampala mallum", "Sambols & sides", [90, 3, 6, 6], VEG, ["thampala", "amaranth"]],
+  ["Fried onions", "Sambols & sides", [340, 4, 30, 23], SAMBOL],
+
+  // ── Vegetables & pulses ───────────────────────────────────────────
+  ["Red lentils, dry (raw)", "Vegetables & pulses", [358, 24, 63, 2.2], [p("cup (raw)", 190), p("tablespoon", 12)], ["mysore dhal", "masoor"]],
+  ["Pumpkin, boiled", "Vegetables & pulses", [26, 1, 6.5, 0.1], [p("cup", 150)]],
+  ["Spinach, cooked", "Vegetables & pulses", [23, 3, 3.8, 0.3], [p("cup", 180)], ["nivithi"]],
+  ["Green beans, boiled", "Vegetables & pulses", [35, 1.9, 7.9, 0.3], [p("cup", 125)], ["bonchi"]],
+  ["Soya meat, boiled", "Vegetables & pulses", [110, 16, 9, 0.6], [p("cup", 100), p("serving", 60)], ["soya chunks"]],
+  ["Green gram, sprouted", "Vegetables & pulses", [30, 3, 6, 0.2], [p("cup", 105)], ["bean sprouts"]],
+
+  // ── Short eats ────────────────────────────────────────────────────
+  ["Chicken roll", "Short eats", [255, 9, 27, 12.5], [p("piece", 70)], ["chinese roll"]],
+  ["Vegetable roll", "Short eats", [240, 5, 30, 11], [p("piece", 70)], ["veg roll"]],
+  ["Chicken patty", "Short eats", [300, 8, 28, 17], [p("piece", 50)], ["chicken pastry"]],
+  ["Chicken cutlet", "Short eats", [235, 11, 18, 13], [p("piece", 35)]],
+  ["Sausage bun", "Short eats", [310, 10, 38, 13], [p("piece", 90)]],
+  ["Egg bun", "Short eats", [260, 9, 35, 9], [p("piece", 100)]],
+  ["Seeni sambol bun", "Short eats", [300, 7, 48, 9], [p("piece", 90)], ["seeni sambal paan"]],
+  ["Isso vadai", "Short eats", [270, 12, 25, 14], [p("piece", 45)], ["prawn vadai", "isso wade"]],
+  ["Chicken shawarma", "Short eats", [215, 12, 22, 9], [p("wrap", 300)], ["shawarma"]],
+  ["Murukku", "Short eats", [520, 9, 55, 30], [p("piece", 15), p("handful", 30)]],
+  ["Spicy mixture", "Short eats", [510, 14, 45, 31], [p("tablespoon", 10), p("handful", 30)], ["bombay mix"]],
+  ["Roasted gram (kadala)", "Short eats", [360, 20, 58, 6], [p("handful", 30), p("tablespoon", 10)], ["kadala parippu", "roasted chickpeas"]],
+  ["Cashews, fried & salted", "Short eats", [580, 16, 30, 46], [p("handful", 30), p("piece", 1.5)], ["cadju", "kaju"]],
+  ["Potato chips", "Short eats", [536, 7, 53, 34], [p("small packet", 25), p("handful", 20)], ["crisps"]],
+  ["Banana fritter", "Short eats", [260, 3, 34, 13], [p("piece", 60)], ["kesel bajji"]],
+
+  // ── Fruits ────────────────────────────────────────────────────────
+  ["Mangosteen", "Fruits", [73, 0.4, 18, 0.6], [p("piece (flesh)", 30)], ["mangus"]],
+  ["Soursop", "Fruits", [66, 1, 17, 0.3], [p("cup", 225)], ["katu anoda"]],
+  ["Custard apple", "Fruits", [101, 1.7, 25, 0.6], [p("piece (flesh)", 100)], ["seeni anoda"]],
+  ["Durian", "Fruits", [147, 1.5, 27, 5.3], [p("pod", 40), p("cup", 240)], ["duriyan"]],
+  ["Pomegranate", "Fruits", [83, 1.7, 19, 1.2], [p("cup (seeds)", 175), p("half", 140)], ["delum"]],
+  ["Sapodilla", "Fruits", [83, 0.4, 20, 1.1], [p("piece", 150)], ["sapathilla", "chikku"]],
+  ["Star fruit", "Fruits", [31, 1, 6.7, 0.3], [p("piece", 90)], ["kamaranga"]],
+  ["Ambarella", "Fruits", [46, 0.2, 12, 0.1], [p("piece", 70)], ["ambarella"]],
+  ["Dragon fruit", "Fruits", [60, 1.2, 13, 0], [p("half", 200), p("cup", 220)]],
+  ["Dates", "Fruits", [282, 2.5, 75, 0.4], [p("piece", 8)], ["rata indi"]],
+  ["Bael fruit", "Fruits", [137, 1.8, 32, 0.3], [p("cup (pulp)", 150)], ["beli"]],
+  ["Gooseberry (nelli)", "Fruits", [44, 0.9, 10, 0.6], [p("piece", 10)], ["nelli", "amla"]],
+  ["Red banana", "Fruits", [90, 1.2, 23, 0.3], [p("piece", 120)], ["rathambala", "rath kesel"]],
+
+  // ── Sweets ────────────────────────────────────────────────────────
+  ["Kalu dodol", "Sweets", [390, 3, 62, 15], [p("piece", 25)], ["dodol"]],
+  ["Aluwa", "Sweets", [400, 4, 75, 10], [p("piece", 25)], ["rice flour aluwa"]],
+  ["Pani walalu", "Sweets", [410, 4, 55, 20], [p("piece", 30)], ["undu walalu"]],
+  ["Aasmi", "Sweets", [450, 3, 65, 20], [p("piece", 30)], ["asmi"]],
+  ["Athirasa", "Sweets", [420, 4, 60, 18], [p("piece", 40)], ["athirasa"]],
+  ["Mung kavum", "Sweets", [380, 6, 55, 15], [p("piece", 30)], ["mun kevum"]],
+  ["Bibikkan", "Sweets", [360, 4, 58, 13], [p("slice", 60)]],
+  ["Butter cake", "Sweets", [420, 5, 52, 21], [p("slice", 50)], ["cake"]],
+  ["Love cake", "Sweets", [430, 6, 48, 24], [p("piece", 40)]],
+  ["Coconut toffee", "Sweets", [450, 2, 65, 20], [p("piece", 15)], ["pol toffee"]],
+  ["Thala guli", "Sweets", [480, 10, 50, 27], [p("piece", 15)], ["sesame balls"]],
+  ["Kurakkan halapa", "Sweets", [220, 3, 40, 5.5], [p("piece", 70)], ["halapa"]],
+  ["Coconut pancake", "Sweets", [270, 4, 40, 10.5], [p("piece", 60)], ["pani pol pancake", "pancake"]],
+  ["Vanilla ice cream", "Sweets", [207, 3.5, 24, 11], [p("scoop", 65), p("cup", 130)], ["ice cream"]],
+  ["Milk chocolate", "Sweets", [535, 7.6, 59, 30], [p("square", 6), p("small bar", 40)], ["chocolate"]],
+
+  // ── Drinks & dairy ────────────────────────────────────────────────
+  ["Milo with milk", "Drinks & dairy", [80, 3.5, 11, 2.5], DRINK, ["milo"]],
+  ["Coffee with milk and sugar", "Drinks & dairy", [45, 1.2, 7, 1.4], DRINK, ["nescafe", "kopi"]],
+  ["Black coffee, no sugar", "Drinks & dairy", [2, 0.1, 0, 0], DRINK, ["kopi"]],
+  ["Ginger tea with sugar", "Drinks & dairy", [12, 0, 3, 0], DRINK, ["inguru the", "ginger tea"]],
+  ["Fresh orange juice", "Drinks & dairy", [45, 0.7, 10.4, 0.2], [p("glass", 250)]],
+  ["Mango juice (packet)", "Drinks & dairy", [55, 0.1, 13.5, 0], [p("packet", 200), p("glass", 250)]],
+  ["Papaya juice", "Drinks & dairy", [50, 0.5, 12, 0.1], [p("glass", 250)]],
+  ["Avocado juice with milk", "Drinks & dairy", [120, 2.5, 15, 6], [p("glass", 300)], ["avocado shake"]],
+  ["Sweet lassi", "Drinks & dairy", [90, 3, 14, 2.5], [p("glass", 250)]],
+  ["Set yoghurt, sweetened", "Drinks & dairy", [95, 3.5, 15, 2.5], [p("cup", 80)], ["yoghurt cup", "yogurt"]],
+  ["Ginger beer", "Drinks & dairy", [40, 0, 10, 0], [p("bottle", 400), p("glass", 250)], ["egb"]],
+  ["Cream soda / cola", "Drinks & dairy", [43, 0, 10.8, 0], [p("bottle", 400), p("can", 330), p("glass", 250)], ["soda", "coke", "soft drink"]],
+  ["Condensed milk", "Drinks & dairy", [321, 8, 54, 8.7], [p("tablespoon", 20), p("teaspoon", 7)]],
+  ["Cheese slice", "Drinks & dairy", [300, 18, 4, 24], [p("slice", 20)]],
+  ["Beer", "Drinks & dairy", [43, 0.5, 3.6, 0], [p("bottle", 625), p("can", 500), p("glass", 250)]],
+];
+
 function slug(name: string): string {
   return name
     .toLowerCase()
@@ -181,7 +329,13 @@ function slug(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export const SEED_FOODS: Food[] = ROWS.map(([name, category, [calories, protein, carbs, fat], portions, aliases]) => ({
+/** Bump when adding foods; existing accounts receive only the newer ones. */
+export const SEED_VERSION = 2;
+
+const tag = (rows: Row[], version: number) => rows.map((row) => ({ row, version }));
+
+export const SEED_FOODS: (Food & { seedVersion: number })[] = [...tag(ROWS, 1), ...tag(MORE_ROWS, 2)].map(
+  ({ row: [name, category, [calories, protein, carbs, fat], portions, aliases], version }) => ({
   id: `sl-${slug(name)}`,
   name,
   aliases: aliases ?? [],
@@ -190,4 +344,5 @@ export const SEED_FOODS: Food[] = ROWS.map(([name, category, [calories, protein,
   portions,
   estimated: true,
   source: "seed",
+  seedVersion: version,
 }));

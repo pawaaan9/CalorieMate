@@ -1,7 +1,7 @@
 "use client";
 
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ensureUserSetup, subscribeFoods, subscribeProfile, subscribeWeights } from "@/lib/db";
 import { auth } from "@/lib/firebase";
 import type { Food, Profile, WeightRecord } from "@/lib/types";
@@ -84,27 +84,4 @@ export function useData(): DataState {
   const ctx = useContext(DataContext);
   if (!ctx) throw new Error("useData must be used inside DataProvider");
   return ctx;
-}
-
-// ── Theme ───────────────────────────────────────────────────────────
-
-export function useTheme(): { dark: boolean; toggle: () => void } {
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    const sync = () => setDark(document.documentElement.classList.contains("dark"));
-    sync();
-    window.addEventListener("themechange", sync);
-    return () => window.removeEventListener("themechange", sync);
-  }, []);
-  const toggle = useCallback(() => {
-    const next = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", next);
-    try {
-      localStorage.setItem("theme", next ? "dark" : "light");
-    } catch {
-      // Private mode: the choice just won't persist.
-    }
-    window.dispatchEvent(new Event("themechange"));
-  }, []);
-  return { dark, toggle };
 }

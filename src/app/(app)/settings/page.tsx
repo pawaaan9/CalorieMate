@@ -3,9 +3,10 @@
 import { signOut } from "firebase/auth";
 import { Check, LogOut, RotateCcw } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { DatePicker } from "@/components/DatePicker";
 import { useAuth, useData } from "@/components/Providers";
 import { Button, Card, CardTitle, ErrorNote, Field, Input, PageHeader, Select } from "@/components/ui";
-import { todayKey } from "@/lib/dates";
+import { ageFrom, todayKey } from "@/lib/dates";
 import { saveProfile, saveWeight, seedDefaultFoods } from "@/lib/db";
 import { auth } from "@/lib/firebase";
 import { ACTIVITY, bmi, bmr, calorieOptions, tdee } from "@/lib/nutrition";
@@ -15,7 +16,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
   const { uid } = useData();
   const [name, setName] = useState(profile.displayName);
   const [sex, setSex] = useState<Sex>(profile.sex);
-  const [age, setAge] = useState(String(profile.age));
+  const [birthDate, setBirthDate] = useState(profile.birthDate ?? "");
   const [height, setHeight] = useState(String(profile.heightCm));
   const [startWeight, setStartWeight] = useState(String(profile.startWeightKg));
   const [currentWeight, setCurrentWeight] = useState(String(currentWeightKg));
@@ -27,7 +28,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
   const [error, setError] = useState<string | null>(null);
 
   const n = {
-    age: parseFloat(age),
+    age: birthDate ? ageFrom(birthDate) : NaN,
     height: parseFloat(height),
     start: parseFloat(startWeight),
     current: parseFloat(currentWeight),
@@ -44,7 +45,8 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!(n.age >= 10 && n.age <= 110)) return setError("Enter an age between 10 and 110.");
+    if (!birthDate) return setError("Enter your birthday.");
+    if (!(n.age >= 10 && n.age <= 110)) return setError("Check your birthday. Age must be between 10 and 110.");
     if (!(n.height >= 100 && n.height <= 250)) return setError("Enter a height between 100 and 250 cm.");
     for (const [label, v] of [
       ["starting", n.start],
@@ -61,7 +63,8 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
       await saveProfile(uid, {
         displayName: name.trim(),
         sex,
-        age: Math.round(n.age),
+        birthDate,
+        age: n.age,
         heightCm: n.height,
         startWeightKg: n.start,
         targetWeightKg: n.target,
@@ -99,8 +102,19 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
               <option value="female">Female</option>
             </Select>
           </Field>
-          <Field label="Age">
-            <Input {...number} value={age} onChange={(e) => setAge(e.target.value)} />
+          <Field label="Birthday" hint={n.age >= 0 ? `Age ${n.age}` : "Your age is calculated from this"}>
+            <DatePicker
+              value={birthDate}
+              max={todayKey()}
+              min="1920-01-01"
+              startView="years"
+              placeholder="Select your birthday"
+              label="Birthday"
+              onChange={(v) => {
+                setBirthDate(v);
+                touch();
+              }}
+            />
           </Field>
           <Field label="Height (cm)">
             <Input {...number} value={height} onChange={(e) => setHeight(e.target.value)} />
@@ -148,7 +162,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
           </Field>
           <div>
             {maintenance === null ? (
-              <p className="pt-6 text-sm text-muted">Fill in your age, height and current weight to see an estimate.</p>
+              <p className="pt-6 text-sm text-muted">Fill in your birthday, height and current weight to see an estimate.</p>
             ) : (
               <>
                 <p className="mb-2 text-xs text-muted">
@@ -166,11 +180,11 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
                           setCalories(String(o.calories));
                           touch();
                         }}
-                        className={`rounded-xl border px-3 py-2 text-left transition ${
-                          active ? "border-accent bg-accent-soft" : "border-line hover:bg-subtle"
+                        className={`rounded-2xl border px-3.5 py-2.5 text-left transition ${
+                          active ? "border-accent bg-accent-soft" : "border-line bg-raised hover:border-accent/50"
                         }`}
                       >
-                        <div className="text-base font-semibold tabular-nums">{o.calories} kcal</div>
+                        <div className="font-display text-lg font-bold tabular-nums">{o.calories} kcal</div>
                         <div className="text-xs text-muted">{o.label}</div>
                       </button>
                     );
@@ -220,7 +234,11 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Goals & settings" subtitle="Update these whenever your goals change" />
+      <PageHeader
+        title="Goals & settings"
+        subtitle="Update these whenever your goals change"
+        photo={{ src: "/photos/gym-rack.jpg", alt: "A rack of dumbbells in a gym" }}
+      />
       <SettingsForm profile={profile} currentWeightKg={currentWeightKg ?? profile.startWeightKg} hasWeighIns={weights.length > 0} />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
