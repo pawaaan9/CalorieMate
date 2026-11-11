@@ -275,12 +275,20 @@ export function PageHeader({
   subtitle?: string;
   action?: ReactNode;
   /** Optional background photo; renders the header as a banner. */
-  photo?: { src: string; alt: string };
+  photo?: { src: string; alt: string; /** CSS object-position, e.g. "center 65%". */ position?: string };
 }) {
   if (photo) {
     return (
       <header className="relative mb-6 overflow-hidden rounded-3xl border border-line">
-        <Image src={photo.src} alt={photo.alt} fill priority sizes="(min-width: 768px) 80vw, 100vw" className="object-cover" />
+        <Image
+          src={photo.src}
+          alt={photo.alt}
+          fill
+          priority
+          sizes="(min-width: 768px) 80vw, 100vw"
+          className="object-cover"
+          style={photo.position ? { objectPosition: photo.position } : undefined}
+        />
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative flex min-h-36 flex-col items-start justify-end gap-3 p-5 sm:min-h-44 sm:flex-row sm:items-end sm:justify-between sm:p-7">
           <div className="min-w-0">

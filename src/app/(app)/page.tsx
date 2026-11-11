@@ -112,7 +112,7 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        photo={{ src: "/photos/dumbbells.jpg", alt: "Picking up a dumbbell at the gym" }}
+        photo={{ src: "/photos/gym-floor.jpg", alt: "A row of treadmills in a dark gym", position: "center 62%" }}
         title={
           <>
             {greeting()}
