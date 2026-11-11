@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f4f6f3;
+  --card: #ffffff;
+  --subtle: #edf0eb;
+  --line: #e2e5df;
+  --fg: #111412;
+  --muted: #5b625d;
+  --accent: #0c7d56;
+  --accent-fg: #ffffff;
+  --accent-soft: #e0f3ea;
+  --danger: #c23434;
+  --warn: #a15c00;
+  /* chart series (validated categorical slots 1-3) */
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #0e100f;
+  --card: #191b1a;
+  --subtle: #232625;
+  --line: #2d312f;
+  --fg: #f0efec;
+  --muted: #a7ada8;
+  --accent: #34b987;
+  --accent-fg: #06130d;
+  --accent-soft: #15322a;
+  --danger: #e66767;
+  --warn: #e0a440;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-s1: var(--s1);
+  --color-s2: var(--s2);
+  --color-s3: var(--s3);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Recharts: no focus outline box on click */
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-wrapper *:focus {
+  outline: none;
+}
