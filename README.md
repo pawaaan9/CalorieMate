@@ -23,6 +23,11 @@ cp .env.example .env.local   # fill in the Firebase web config
 npm run dev
 ```
 
+`CALORIE_API_KEY` is optional too. With it, food search also queries
+[Calorie API](https://calorieapi.com) (packaged and international foods,
+per-100 g values with sugar). Create a REST API key in its dashboard. The free
+plan allows 1,000 calls a month; searches are cached in Firestore for 30 days.
+
 `USDA_API_KEY` is optional. Without it the app uses USDA's shared `DEMO_KEY`,
 which is limited to about 30 requests an hour. A free key takes a minute:
 https://fdc.nal.usda.gov/api-key-signup

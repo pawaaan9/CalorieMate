@@ -356,8 +356,8 @@ export async function deleteWeight(uid: string, date: string): Promise<void> {
 // ── External search cache ───────────────────────────────────────────
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-// "v2": results now include sugar, so older cached results are ignored.
-const cacheKey = (q: string) => `v2:${encodeURIComponent(q.trim().toLowerCase())}`.slice(0, 300);
+// "v3": results now include sugar and Calorie API foods, so older cached results are ignored.
+const cacheKey = (q: string) => `v3:${encodeURIComponent(q.trim().toLowerCase())}`.slice(0, 300);
 
 export async function getCachedSearch(uid: string, q: string): Promise<Food[] | null> {
   try {

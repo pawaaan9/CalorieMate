@@ -483,7 +483,7 @@ export function FoodPicker({
                 <div className="space-y-2">
                   {online.failed.length > 0 && (
                     <p className="rounded-2xl bg-raised px-3.5 py-2.5 text-xs text-muted">
-                      {online.failed.join(" and ")} did not respond just now
+                      {online.failed.join(", ").replace(/, ([^,]*)$/, " and $1")} did not respond just now
                       {online.foods.length > 0 ? ", so these results are partial." : ". Your saved foods still work."}{" "}
                       <button type="button" className="font-semibold text-accent hover:underline" onClick={runOnline}>
                         Try again
@@ -492,7 +492,7 @@ export function FoodPicker({
                   )}
                   {onlineFoods.length > 0 && (
                     <div>
-                      <p className="mb-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Online · USDA & Open Food Facts</p>
+                      <p className="mb-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Online results</p>
                       <ul className="-mx-2">
                         {onlineFoods.map((f) => (
                           <FoodRow key={f.id} food={f} onPick={setPicked} onQuickAdd={quickAdd} weigh={weigh} />

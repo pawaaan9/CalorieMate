@@ -21,13 +21,14 @@ export interface Portion {
   grams: number;
 }
 
-export type FoodSource = "seed" | "custom" | "usda" | "off";
+export type FoodSource = "seed" | "custom" | "usda" | "off" | "capi";
 
 export const SOURCE_LABEL: Record<FoodSource, string> = {
   seed: "Built-in foods",
   custom: "My food",
   usda: "USDA",
   off: "Open Food Facts",
+  capi: "Calorie API",
 };
 
 export const FOOD_CATEGORIES = [

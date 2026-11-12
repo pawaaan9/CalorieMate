@@ -25,6 +25,6 @@ export async function searchOnline(uid: string, q: string): Promise<OnlineResult
     if (data.failed.length === 0) await setCachedSearch(uid, q, data.foods);
     return { ...data, fromCache: false };
   } catch {
-    return { foods: [], failed: ["USDA", "Open Food Facts"], fromCache: false };
+    return { foods: [], failed: ["Online search"], fromCache: false };
   }
 }

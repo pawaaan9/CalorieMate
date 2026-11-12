@@ -162,6 +162,69 @@ async function searchOff(q: string): Promise<Food[]> {
   });
 }
 
+// ── Calorie API (calorieapi.com) ───────────────────────────────────
+
+interface CapiFood {
+  id: number;
+  name: string;
+  brand_name: string | null;
+  is_verified?: boolean;
+  calories_100g: number | null;
+  protein_100g: number | null;
+  carbs_100g: number | null;
+  fat_100g: number | null;
+  sugar_100g: number | null;
+  default_portion?: { grams: number; label: string } | null;
+}
+
+const CAPI_BASE = process.env.CALORIE_API_BASE || "https://calorieapiadmin.com/api/v1";
+
+/** Only runs when CALORIE_API_KEY is set. Free plan: 1,000 calls/month, 10/minute. */
+async function searchCalorieApi(q: string): Promise<Food[]> {
+  const key = process.env.CALORIE_API_KEY;
+  if (!key) return [];
+  const url = new URL(`${CAPI_BASE}/search/foods`);
+  url.searchParams.set("q", q);
+  url.searchParams.set("limit", "10");
+  const res = await fetch(url, {
+    headers: { "X-API-Key": key },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    next: { revalidate: DAY },
+  });
+  if (!res.ok) throw new Error(`Calorie API responded ${res.status}`);
+  const data = (await res.json()) as { data?: CapiFood[] };
+
+  return (data.data ?? []).flatMap((f): Food[] => {
+    if (!f.name || f.calories_100g == null) return [];
+    const portions: Portion[] = [];
+    const dp = f.default_portion;
+    if (dp && dp.grams > 0 && dp.grams !== 100) {
+      portions.push({ label: dp.label.replace(/^1\s+/, "").toLowerCase(), grams: num(dp.grams) });
+    }
+    portions.push({ label: "100 g", grams: 100 });
+    // Unbranded foods come back with brand_name "Verified"; that is not a brand.
+    const brand = f.brand_name && !/^verified$/i.test(f.brand_name) ? f.brand_name.trim() : undefined;
+    return [
+      {
+        id: `capi-${f.id}`,
+        name: titleCase(f.name),
+        brand,
+        category: "Other",
+        per100g: {
+          calories: Math.round(num(f.calories_100g)),
+          protein: num(f.protein_100g),
+          carbs: num(f.carbs_100g),
+          fat: num(f.fat_100g),
+          sugar: num(f.sugar_100g),
+        },
+        portions,
+        estimated: f.is_verified === false,
+        source: "capi",
+      },
+    ];
+  });
+}
+
 // ── Handler ─────────────────────────────────────────────────────────
 
 export async function GET(request: Request) {
@@ -173,13 +236,18 @@ export async function GET(request: Request) {
     return Response.json({ error: "Query must be 2–80 characters" }, { status: 400 });
   }
 
-  const [usda, off] = await Promise.allSettled([searchUsda(q), searchOff(q)]);
+  const sources: [string, Promise<Food[]>][] = [
+    ["Calorie API", searchCalorieApi(q)],
+    ["USDA", searchUsda(q)],
+    ["Open Food Facts", searchOff(q)],
+  ];
+  const results = await Promise.allSettled(sources.map(([, p]) => p));
   const foods: Food[] = [];
   const failed: string[] = [];
-  if (usda.status === "fulfilled") foods.push(...usda.value);
-  else failed.push("USDA");
-  if (off.status === "fulfilled") foods.push(...off.value);
-  else failed.push("Open Food Facts");
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") foods.push(...r.value);
+    else failed.push(sources[i][0]);
+  });
 
   return Response.json({ foods, failed });
 }
