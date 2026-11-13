@@ -5,14 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { DatePicker } from "@/components/DatePicker";
 import { EntryEditor, FoodPicker } from "@/components/FoodPicker";
+import { NutrientPanel } from "@/components/NutrientPanel";
 import { useData } from "@/components/Providers";
 import { useToast } from "@/components/Toast";
-import { Button, Card, EstimatedBadge, IconButton, MealIcon, PageHeader, ProgressBar, Spinner, SugarMeter } from "@/components/ui";
+import { Button, Card, EstimatedBadge, IconButton, MealIcon, PageHeader, ProgressBar, Spinner } from "@/components/ui";
 import { addDays, formatLong, fromKey, todayKey, weekdayShort } from "@/lib/dates";
 import { copyEntries, deleteEntry, restoreEntry } from "@/lib/db";
 import { useEntries } from "@/lib/hooks";
 import { MEAL_META, mealForNow } from "@/lib/meta";
-import { sumMacros } from "@/lib/nutrition";
+import { sumMacros, targetsFor } from "@/lib/nutrition";
 import { MEALS, type Entry, type Meal } from "@/lib/types";
 
 const qty = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""));
@@ -144,24 +145,9 @@ export default function LogPage() {
         <div className="mt-4">
           <ProgressBar value={totals.calories} max={goal} over={remaining < 0} />
         </div>
-        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {(
-            [
-              ["Protein", totals.protein, "bg-s1"],
-              ["Carbs", totals.carbs, "bg-s2"],
-              ["Fat", totals.fat, "bg-s3"],
-            ] as const
-          ).map(([label, value, dot]) => (
-            <div key={label} className="rounded-2xl bg-raised/70 px-3 py-2">
-              <dt className="flex items-center gap-1.5 text-xs text-muted">
-                <span className={`h-2 w-2 rounded-full ${dot}`} />
-                {label}
-              </dt>
-              <dd className="font-display text-lg font-bold tabular-nums">{Math.round(value)} g</dd>
-            </div>
-          ))}
-          <SugarMeter grams={totals.sugar ?? 0} limit={profile?.sugarLimitG ?? 50} className="px-3 py-2" />
-        </dl>
+        <div className="mt-5 border-t border-line pt-5">
+          <NutrientPanel totals={totals} targets={targetsFor(profile)} />
+        </div>
       </Card>
 
       {entries === null ? (

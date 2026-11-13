@@ -1,3 +1,5 @@
+import { SEED_ADDED_SUGAR } from "./seedAddedSugar";
+import { SEED_FIBRE } from "./seedFibre";
 import { SEED_SUGAR } from "./seedSugar";
 import type { Food, Macros, Portion } from "./types";
 
@@ -331,10 +333,13 @@ function slug(name: string): string {
 }
 
 /** Bump when adding foods; existing accounts receive only the newer ones. */
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 7;
 
-/** Seed version that introduced sugar values; older accounts get them backfilled. */
-export const SUGAR_VERSION = 5;
+
+/** Seed version that introduced each nutrient; older accounts get them backfilled. */
+// fibre and added sugar re-run at v7 to fix entries logged with 0 before the v6 backfill
+export const NUTRIENT_FIELD_VERSION = { sugar: 5, fiber: 7, addedSugar: 7 } as const;
+export type BackfillField = keyof typeof NUTRIENT_FIELD_VERSION;
 
 /**
  * Value fixes after checking against USDA SR Legacy. Applied to existing
@@ -390,7 +395,15 @@ export const SEED_FOODS: (Food & { seedVersion: number })[] = [
   name,
   aliases: aliases ?? [],
   category,
-  per100g: { calories, protein, carbs, fat, sugar: SEED_SUGAR[slug(name)] ?? 0 },
+  per100g: {
+    calories,
+    protein,
+    carbs,
+    fat,
+    sugar: SEED_SUGAR[slug(name)] ?? 0,
+    fiber: SEED_FIBRE[slug(name)] ?? 0,
+    addedSugar: SEED_ADDED_SUGAR[slug(name)] ?? 0,
+  },
   portions,
   estimated,
   source: "seed",

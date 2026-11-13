@@ -17,7 +17,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { macrosFor, sumMacros } from "./nutrition";
-import { SEED_CORRECTIONS, SEED_FOODS, SEED_VERSION, SUGAR_VERSION } from "./seedFoods";
+import { NUTRIENT_FIELD_VERSION, SEED_CORRECTIONS, SEED_FOODS, SEED_VERSION, type BackfillField } from "./seedFoods";
 import {
   DEFAULT_PROFILE,
   type DailySummary,
@@ -84,9 +84,8 @@ export async function ensureUserSetup(uid: string, email: string | null): Promis
       writes.set(doc(foodsCol(uid), fix.id), { per100g: fix.to }, { merge: true });
     }
   }
-  if (have < SUGAR_VERSION) {
-    await backfillSugar(uid, existing, writes, (snap.data().dailyCalorieTarget as number | undefined) ?? 0);
-  }
+  const fields = (Object.keys(NUTRIENT_FIELD_VERSION) as BackfillField[]).filter((f) => NUTRIENT_FIELD_VERSION[f] > have);
+  await backfillNutrients(uid, existing, writes, (snap.data().dailyCalorieTarget as number | undefined) ?? 0, fields);
   writes.set(userRef(uid), { seedVersion: SEED_VERSION }, { merge: true });
   await writes.commit();
 }
@@ -119,33 +118,52 @@ class BatchWriter {
 }
 
 /**
- * One-time: add sugar to built-in foods and to entries saved before sugar was
- * tracked. Only the sugar field is written, so other edits are kept. Foods
- * with no known sugar value (your own or API foods) are left as they are.
+ * One-time: add newly tracked nutrients (sugar, fibre, added sugar) to built-in
+ * foods and to entries saved before they were tracked, then recompute daily
+ * totals. Only the missing fields are written, so other edits are kept. Foods
+ * with no known value (your own or API foods) are left as they are.
  */
-async function backfillSugar(uid: string, foods: Map<string, Food>, writes: BatchWriter, goal: number) {
-  const seedSugar = new Map(SEED_FOODS.map((f) => [f.id, f.per100g.sugar ?? 0]));
-  const sugarPer100 = new Map<string, number>();
+async function backfillNutrients(
+  uid: string,
+  foods: Map<string, Food>,
+  writes: BatchWriter,
+  goal: number,
+  fields: BackfillField[],
+) {
+  if (fields.length === 0) return;
+  const seed = new Map(SEED_FOODS.map((f) => [f.id, f.per100g]));
+  const known = new Map<string, Partial<Record<BackfillField, number>>>();
+
   for (const [id, food] of foods) {
-    const known = food.per100g?.sugar;
-    if (typeof known === "number") {
-      sugarPer100.set(id, known);
-    } else if (seedSugar.has(id)) {
-      const sugar = seedSugar.get(id)!;
-      sugarPer100.set(id, sugar);
-      writes.set(doc(foodsCol(uid), id), { per100g: { sugar } }, { merge: true });
+    const values: Partial<Record<BackfillField, number>> = {};
+    const missing: Partial<Record<BackfillField, number>> = {};
+    for (const field of fields) {
+      const current = food.per100g?.[field];
+      const fromSeed = seed.get(id)?.[field];
+      if (typeof current === "number") values[field] = current;
+      else if (typeof fromSeed === "number") values[field] = missing[field] = fromSeed;
     }
+    known.set(id, values);
+    if (Object.keys(missing).length) writes.set(doc(foodsCol(uid), id), { per100g: missing }, { merge: true });
   }
 
   const entries = await getDocs(entriesCol(uid));
   const dates = new Set<string>();
   for (const d of entries.docs) {
     const e = d.data() as Entry;
-    if (typeof e.sugar === "number") continue;
-    const per100 = e.per100g?.sugar ?? sugarPer100.get(e.foodId) ?? seedSugar.get(e.foodId);
-    if (per100 === undefined) continue;
-    const sugar = Math.round(((per100 * e.grams) / 100) * 10) / 10;
-    writes.set(d.ref, { sugar, per100g: { sugar: per100 } }, { merge: true });
+    const amounts: Partial<Record<BackfillField, number>> = {};
+    const per100: Partial<Record<BackfillField, number>> = {};
+    for (const field of fields) {
+      // Skip only values worked out from real per-100 g data. An entry logged before its
+      // food had this nutrient has a 0 with no per-100 g value behind it, so redo it.
+      if (typeof e[field] === "number" && typeof e.per100g?.[field] === "number") continue;
+      const value = e.per100g?.[field] ?? known.get(e.foodId)?.[field] ?? seed.get(e.foodId)?.[field];
+      if (typeof value !== "number") continue;
+      per100[field] = value;
+      amounts[field] = Math.round(((value * e.grams) / 100) * 10) / 10;
+    }
+    if (Object.keys(amounts).length === 0) continue;
+    writes.set(d.ref, { ...amounts, per100g: per100 }, { merge: true });
     dates.add(e.date);
   }
   // Totals are recomputed after the entry writes land.
@@ -356,8 +374,8 @@ export async function deleteWeight(uid: string, date: string): Promise<void> {
 // ── External search cache ───────────────────────────────────────────
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-// "v3": results now include sugar and Calorie API foods, so older cached results are ignored.
-const cacheKey = (q: string) => `v3:${encodeURIComponent(q.trim().toLowerCase())}`.slice(0, 300);
+// "v4": results now include fibre and added sugar, so older cached results are ignored.
+const cacheKey = (q: string) => `v4:${encodeURIComponent(q.trim().toLowerCase())}`.slice(0, 300);
 
 export async function getCachedSearch(uid: string, q: string): Promise<Food[] | null> {
   try {

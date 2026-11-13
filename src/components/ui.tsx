@@ -174,28 +174,6 @@ export function ConfirmDialog({
   );
 }
 
-/** Sugar eaten against the daily limit. Turns red with "over by" text past the limit. */
-export function SugarMeter({ grams, limit, className = "" }: { grams: number; limit: number; className?: string }) {
-  const over = limit > 0 && grams > limit;
-  const pct = limit > 0 ? Math.min(100, (grams / limit) * 100) : 0;
-  return (
-    <div className={`rounded-2xl bg-raised/70 p-3 ${className}`}>
-      <div className="flex items-center gap-1.5 text-xs text-muted">
-        <span className="h-2 w-2 rounded-full bg-s4" />
-        Sugar
-      </div>
-      <div className={`mt-0.5 font-display text-xl font-bold tabular-nums ${over ? "text-danger" : ""}`}>
-        {Math.round(grams)}
-        <span className="ml-0.5 text-xs font-medium text-muted">/ {limit} g</span>
-      </div>
-      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-subtle">
-        <div className={`h-full rounded-full ${over ? "bg-danger" : "bg-s4"}`} style={{ width: `${pct}%` }} />
-      </div>
-      {over && <div className="mt-1 text-[11px] font-semibold text-danger">Over by {Math.round(grams - limit)} g</div>}
-    </div>
-  );
-}
-
 export function ProgressBar({ value, max, over = false }: { value: number; max: number; over?: boolean }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (

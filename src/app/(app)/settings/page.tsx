@@ -9,8 +9,17 @@ import { Button, Card, CardTitle, ConfirmDialog, ErrorNote, Field, Input, PageHe
 import { ageFrom, todayKey } from "@/lib/dates";
 import { saveProfile, saveWeight, seedDefaultFoods } from "@/lib/db";
 import { auth } from "@/lib/firebase";
-import { ACTIVITY, bmi, bmr, calorieOptions, tdee } from "@/lib/nutrition";
+import { ACTIVITY, bmi, bmr, calorieOptions, recommendedTargets, tdee } from "@/lib/nutrition";
 import type { ActivityLevel, Profile, Sex } from "@/lib/types";
+
+const TARGET_FIELDS: [key: "protein" | "carbs" | "fat" | "fiber" | "sugar" | "addedSugar", label: string, max: number][] = [
+  ["protein", "Protein", 400],
+  ["carbs", "Carbs", 800],
+  ["fat", "Fat", 300],
+  ["fiber", "Fibre", 100],
+  ["sugar", "Total sugar", 300],
+  ["addedSugar", "Added sugar", 300],
+];
 
 function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Profile; currentWeightKg: number; hasWeighIns: boolean }) {
   const { uid } = useData();
@@ -24,7 +33,15 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
   const [activity, setActivity] = useState<ActivityLevel>(profile.activityLevel);
   const [calories, setCalories] = useState(String(profile.dailyCalorieTarget));
   const [weighFood, setWeighFood] = useState(profile.weighFood ?? false);
-  const [sugarLimit, setSugarLimit] = useState(String(profile.sugarLimitG ?? 50));
+  const [autoTargets, setAutoTargets] = useState(profile.autoTargets ?? true);
+  const [manual, setManual] = useState({
+    protein: String(profile.proteinTargetG ?? 125),
+    carbs: String(profile.carbsTargetG ?? 225),
+    fat: String(profile.fatTargetG ?? 67),
+    fiber: String(profile.fiberTargetG ?? 28),
+    sugar: String(profile.sugarLimitG ?? 50),
+    addedSugar: String(profile.addedSugarLimitG ?? 25),
+  });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +54,7 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
     target: parseFloat(targetWeight),
     calories: parseFloat(calories),
   };
+  const recommended = recommendedTargets(n.calories > 0 ? n.calories : profile.dailyCalorieTarget);
   const canEstimate = n.age > 0 && n.height > 0 && n.current > 0;
   const base = canEstimate ? Math.round(bmr(sex, n.current, n.height, n.age)) : null;
   const maintenance = canEstimate ? Math.round(tdee(sex, n.current, n.height, n.age, activity)) : null;
@@ -58,8 +76,13 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
       if (!(v >= 20 && v <= 400)) return setError(`Enter a ${label} weight between 20 and 400 kg.`);
     }
     if (!(n.calories >= 800 && n.calories <= 6000)) return setError("Enter a daily calorie target between 800 and 6000 kcal.");
-    const sugarG = parseFloat(sugarLimit);
-    if (!(sugarG >= 5 && sugarG <= 300)) return setError("Enter a daily sugar limit between 5 and 300 g.");
+    const t = Object.fromEntries(Object.entries(manual).map(([k, v]) => [k, parseFloat(v)])) as Record<keyof typeof manual, number>;
+    if (!autoTargets) {
+      for (const [key, label, max] of TARGET_FIELDS) {
+        if (!(t[key] >= 0 && t[key] <= max)) return setError(`Enter a ${label.toLowerCase()} target between 0 and ${max} g.`);
+      }
+      if (t.addedSugar > t.sugar) return setError("The added-sugar limit can't be more than the total-sugar limit.");
+    }
 
     setBusy(true);
     setError(null);
@@ -75,7 +98,13 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
         activityLevel: activity,
         dailyCalorieTarget: Math.round(n.calories),
         weighFood,
-        sugarLimitG: Math.round(sugarG),
+        autoTargets,
+        proteinTargetG: Math.round(t.protein),
+        carbsTargetG: Math.round(t.carbs),
+        fatTargetG: Math.round(t.fat),
+        fiberTargetG: Math.round(t.fiber),
+        sugarLimitG: Math.round(t.sugar),
+        addedSugarLimitG: Math.round(t.addedSugar),
         onboarded: true,
       });
       // A changed current weight is recorded as today's weigh-in.
@@ -203,33 +232,61 @@ function SettingsForm({ profile, currentWeightKg, hasWeighIns }: { profile: Prof
       </Card>
 
       <Card className="lg:col-span-2">
-        <CardTitle>Food logging</CardTitle>
-        <div className="mb-4 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:items-end">
-          <Field label="Daily sugar limit (g)">
-            <Input {...number} step="1" value={sugarLimit} onChange={(e) => setSugarLimit(e.target.value)} />
-          </Field>
-          <div className="flex flex-wrap gap-2 sm:pb-1">
-            {[25, 36, 50].map((g) => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => {
-                  setSugarLimit(String(g));
+        <CardTitle hint="Shown on the dashboard and food log with what you've eaten and what's left.">
+          Daily nutrient targets
+        </CardTitle>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={autoTargets}
+          onClick={() => {
+            setAutoTargets(!autoTargets);
+            touch();
+          }}
+          className="mb-4 flex w-full items-center gap-4 rounded-2xl border border-line bg-raised p-4 text-left transition hover:border-accent/50"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Set automatically from my calorie target</span>
+            <span className="mt-0.5 block text-xs text-muted">
+              Protein 25 %, carbs 45 % and fat 30 % of calories; fibre 14 g per 1,000 kcal; total sugar under 10 % and
+              added sugar under 5 % of calories.
+            </span>
+          </span>
+          <span aria-hidden className={`relative h-7 w-12 shrink-0 rounded-full transition ${autoTargets ? "bg-accent" : "bg-subtle"}`}>
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full transition-all ${autoTargets ? "left-6 bg-accent-fg" : "left-1 bg-muted"}`}
+            />
+          </span>
+        </button>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {TARGET_FIELDS.map(([key, label]) => (
+            <Field key={key} label={`${label} (g)`} nowrap>
+              <Input
+                {...number}
+                step="1"
+                disabled={autoTargets}
+                value={autoTargets ? String(recommended[key]) : manual[key]}
+                onChange={(e) => {
+                  setManual((m) => ({ ...m, [key]: e.target.value }));
                   touch();
                 }}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                  parseFloat(sugarLimit) === g ? "border-accent bg-accent-soft text-accent" : "border-line bg-raised text-muted hover:text-fg"
-                }`}
-              >
-                {g} g
-              </button>
-            ))}
-          </div>
+                className="disabled:opacity-70"
+              />
+            </Field>
+          ))}
         </div>
-        <p className="mb-4 text-xs text-muted">
-          Counts total sugar, including the natural sugar in fruit and milk. Health guidance suggests keeping added sugar
-          under 25–36 g a day; 50 g of total sugar is a sensible starting limit.
+        <p className="mt-3 text-xs text-muted">
+          Natural sugar limit:{" "}
+          <span className="font-semibold text-fg">
+            {Math.max(0, (autoTargets ? recommended.sugar : parseFloat(manual.sugar) || 0) - (autoTargets ? recommended.addedSugar : parseFloat(manual.addedSugar) || 0))} g
+          </span>{" "}
+          (total sugar limit minus added sugar limit). Protein and fibre are goals to reach; carbs and fat are targets;
+          sugars are limits to stay under.
         </p>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardTitle>Food logging</CardTitle>
         <button
           type="button"
           role="switch"

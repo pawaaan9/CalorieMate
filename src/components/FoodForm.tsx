@@ -39,6 +39,10 @@ export function FoodForm({
   const [carbs, setCarbs] = useState(food ? String(food.per100g.carbs) : "");
   const [fat, setFat] = useState(food ? String(food.per100g.fat) : "");
   const [sugar, setSugar] = useState(food?.per100g.sugar !== undefined ? String(food.per100g.sugar) : "");
+  const [fiber, setFiber] = useState(food?.per100g.fiber !== undefined ? String(food.per100g.fiber) : "");
+  const [addedSugar, setAddedSugar] = useState(
+    food?.per100g.addedSugar !== undefined ? String(food.per100g.addedSugar) : "",
+  );
   const [estimated, setEstimated] = useState(food?.estimated ?? false);
   const [portions, setPortions] = useState<PortionRow[]>(
     food?.portions.map((p) => ({ label: p.label, grams: String(p.grams) })) ?? [{ label: "serving", grams: "100" }],
@@ -62,6 +66,8 @@ export function FoodForm({
     if (cleanPortions.length === 0) return setError("Add at least one portion with a weight in grams.");
     if ((parseFloat(sugar) || 0) > (parseFloat(carbs) || 0) + 0.05)
       return setError("Sugar is part of carbs, so it can't be more than the carbs value.");
+    if ((parseFloat(addedSugar) || 0) > (parseFloat(sugar) || 0) + 0.05)
+      return setError("Added sugar is part of total sugar, so it can't be more than the sugar value.");
 
     const k = 100 / basisG;
     const macro = (v: string) => round1(Math.max(0, parseFloat(v) || 0) * k);
@@ -80,6 +86,8 @@ export function FoodForm({
           carbs: macro(carbs),
           fat: macro(fat),
           sugar: macro(sugar),
+          fiber: macro(fiber),
+          addedSugar: macro(addedSugar),
         },
         portions: cleanPortions,
         estimated,
@@ -127,7 +135,7 @@ export function FoodForm({
         <Field label="Values below are for this many grams" hint="Keep 100 for per-100 g values, or enter the pack's serving size.">
           <Input type="number" inputMode="decimal" min="0" step="any" value={basis} onChange={(e) => setBasis(e.target.value)} />
         </Field>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Field label="Calories" nowrap>
             <Input type="number" inputMode="decimal" min="0" step="any" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="kcal" />
           </Field>
@@ -137,14 +145,26 @@ export function FoodForm({
           <Field label="Carbs (g)" nowrap>
             <Input type="number" inputMode="decimal" min="0" step="any" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
           </Field>
-          <Field label="Sugar (g)" nowrap>
-            <Input type="number" inputMode="decimal" min="0" step="any" value={sugar} onChange={(e) => setSugar(e.target.value)} />
-          </Field>
           <Field label="Fat (g)" nowrap>
             <Input type="number" inputMode="decimal" min="0" step="any" value={fat} onChange={(e) => setFat(e.target.value)} />
           </Field>
         </div>
-        <p className="text-xs text-muted">Sugar is the “of which sugars” line under carbohydrates on the label.</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Field label="Fibre (g)" nowrap>
+            <Input type="number" inputMode="decimal" min="0" step="any" value={fiber} onChange={(e) => setFiber(e.target.value)} />
+          </Field>
+          <Field label="Sugar (g)" nowrap>
+            <Input type="number" inputMode="decimal" min="0" step="any" value={sugar} onChange={(e) => setSugar(e.target.value)} />
+          </Field>
+          <Field label="Added sugar (g)" nowrap>
+            <Input type="number" inputMode="decimal" min="0" step="any" value={addedSugar} onChange={(e) => setAddedSugar(e.target.value)} placeholder="if listed" />
+          </Field>
+        </div>
+        <p className="text-xs text-muted">
+          Sugar is the “of which sugars” line under carbohydrates. Added sugar is listed on some labels (“includes added
+          sugars”); leave it empty for plain foods like milk, fruit or yogurt with no sugar added. Natural sugar is worked
+          out as sugar minus added sugar.
+        </p>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="h-4 w-4 accent-[#bfee57]" checked={estimated} onChange={(e) => setEstimated(e.target.checked)} />
           These values are estimates (not from a label)

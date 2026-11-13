@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { CalorieBars, WeightLine, type BarPoint } from "@/components/charts";
 import { useData } from "@/components/Providers";
-import { Card, CardTitle, MealIcon, PageHeader, ProgressBar, Ring, SugarMeter } from "@/components/ui";
+import { NutrientPanel } from "@/components/NutrientPanel";
+import { Card, CardTitle, MealIcon, PageHeader, ProgressBar, Ring } from "@/components/ui";
+import { targetsFor, ZERO } from "@/lib/nutrition";
 import { addDays, daysBetween, formatFull, formatLong, formatShort, todayKey, weekStart, weekdayShort } from "@/lib/dates";
 import { useEntries, useSummaries } from "@/lib/hooks";
 import { greeting } from "@/lib/meta";
-import { MEALS, type DailySummary } from "@/lib/types";
+import { MEALS, type DailySummary, type Macros } from "@/lib/types";
 
 const WEEKS = 8;
 const kg = (n: number) => n.toFixed(1);
@@ -20,23 +22,6 @@ function average(days: DailySummary[]): number | null {
   return logged.length ? Math.round(logged.reduce((a, d) => a + d.calories, 0) / logged.length) : null;
 }
 
-function MacroStat({ label, grams, pct, dot }: { label: string; grams: number; pct: number; dot: string }) {
-  return (
-    <div className="rounded-2xl bg-raised/70 p-3">
-      <div className="flex items-center gap-1.5 text-xs text-muted">
-        <span className={`h-2 w-2 rounded-full ${dot}`} />
-        {label}
-      </div>
-      <div className="mt-0.5 font-display text-xl font-bold tabular-nums">
-        {Math.round(grams)}
-        <span className="ml-0.5 text-xs font-medium text-muted">g</span>
-      </div>
-      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-subtle">
-        <div className={`h-full rounded-full ${dot}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
 
 export default function DashboardPage() {
   const { uid, profile, weights, currentWeightKg } = useData();
@@ -101,13 +86,8 @@ export default function DashboardPage() {
   const dueForWeighIn = !latest || daysBetween(latest.date, today) >= 7;
   const goodDelta = weekDelta !== null && (losing ? weekDelta < 0 : weekDelta > 0);
 
-  const macroCals = {
-    protein: (todaySummary?.protein ?? 0) * 4,
-    carbs: (todaySummary?.carbs ?? 0) * 4,
-    fat: (todaySummary?.fat ?? 0) * 9,
-  };
-  const macroTotal = macroCals.protein + macroCals.carbs + macroCals.fat || 1;
-  const pct = (n: number) => Math.round((n / macroTotal) * 100);
+  const todayTotals: Macros = todaySummary ?? ZERO;
+  const targets = targetsFor(profile);
 
   return (
     <>
@@ -139,16 +119,16 @@ export default function DashboardPage() {
         {/* Hero: today */}
         <Card className="lg:col-span-2 xl:col-span-3">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
-            <Ring value={eaten} max={goal} size={184} stroke={16}>
+            <Ring value={eaten} max={goal} size={168} stroke={15}>
               <span className="font-display text-4xl font-bold tabular-nums">{Math.abs(remaining).toLocaleString()}</span>
               <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                 {remaining >= 0 ? "kcal left" : "kcal over"}
               </span>
             </Ring>
-            <div className="w-full min-w-0 flex-1 space-y-4">
+            <div className="w-full min-w-0 flex-1 space-y-3">
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted">Eaten today</div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted">Calories today</div>
                   <div className="font-display text-3xl font-bold tabular-nums">
                     {eaten.toLocaleString()}
                     <span className="ml-1 text-sm font-medium text-muted">/ {goal.toLocaleString()} kcal</span>
@@ -161,18 +141,21 @@ export default function DashboardPage() {
                   <Plus size={17} strokeWidth={2.75} /> Log food
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <MacroStat label="Protein" grams={todaySummary?.protein ?? 0} pct={pct(macroCals.protein)} dot="bg-s1" />
-                <MacroStat label="Carbs" grams={todaySummary?.carbs ?? 0} pct={pct(macroCals.carbs)} dot="bg-s2" />
-                <MacroStat label="Fat" grams={todaySummary?.fat ?? 0} pct={pct(macroCals.fat)} dot="bg-s3" />
-                <SugarMeter grams={todaySummary?.sugar ?? 0} limit={profile?.sugarLimitG ?? 50} />
-              </div>
+              <ProgressBar value={eaten} max={goal} over={remaining < 0} />
+              <p className="text-xs text-muted">
+                {remaining >= 0
+                  ? `${remaining.toLocaleString()} kcal left of your ${goal.toLocaleString()} kcal target`
+                  : `${Math.abs(remaining).toLocaleString()} kcal over your ${goal.toLocaleString()} kcal target`}
+              </p>
             </div>
+          </div>
+          <div className="mt-6 border-t border-line pt-5">
+            <NutrientPanel totals={todayTotals} targets={targets} />
           </div>
         </Card>
 
         {/* Streak + weigh-in */}
-        <div className="grid min-w-0 grid-cols-1 gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <Card className="flex items-center gap-4">
             <span
               className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${streak > 0 ? "bg-accent text-accent-fg" : "bg-raised text-muted"}`}
@@ -209,6 +192,48 @@ export default function DashboardPage() {
             </div>
             <ArrowRight size={18} className="shrink-0 text-muted" />
           </Link>
+          {/* Weight goal */}
+          <Card className="flex-1">
+            <CardTitle>Weight goal</CardTitle>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {(
+                [
+                  ["Start", start, ""],
+                  ["Now", current, "text-accent"],
+                  ["Target", target, ""],
+                ] as const
+              ).map(([label, v, cls]) => (
+                <div key={label} className="rounded-2xl bg-raised/70 py-2.5">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</div>
+                  <div className={`font-display text-xl font-bold tabular-nums ${cls}`}>{kg(v)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4">
+              <ProgressBar value={progress} max={1} />
+              <div className="mt-2 flex justify-between text-xs text-muted">
+                <span className="font-semibold text-fg">{Math.round(progress * 100)}%</span>
+                <span>{Math.abs(toGo) < 0.05 ? "Target reached" : `${Math.abs(toGo).toFixed(1)} kg to go`}</span>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
+              <div>
+                <div className="text-xs text-muted">{change <= 0 ? "Total lost" : "Total gained"}</div>
+                <div className="font-display text-xl font-bold tabular-nums">{Math.abs(change).toFixed(1)} kg</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted">Since last weigh-in</div>
+                {weekDelta === null ? (
+                  <div className="text-sm text-muted">Needs 2 weigh-ins</div>
+                ) : (
+                  <div className={`flex items-center gap-0.5 font-display text-xl font-bold tabular-nums ${goodDelta ? "text-accent" : weekDelta === 0 ? "" : "text-warn"}`}>
+                    {weekDelta < 0 ? <ArrowDownRight size={18} /> : weekDelta > 0 ? <ArrowUpRight size={18} /> : null}
+                    {signed(weekDelta)} kg
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Today's meals */}
@@ -250,51 +275,8 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        {/* Weight goal */}
-        <Card>
-          <CardTitle>Weight goal</CardTitle>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            {(
-              [
-                ["Start", start, ""],
-                ["Now", current, "text-accent"],
-                ["Target", target, ""],
-              ] as const
-            ).map(([label, v, cls]) => (
-              <div key={label} className="rounded-2xl bg-raised/70 py-2.5">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</div>
-                <div className={`font-display text-xl font-bold tabular-nums ${cls}`}>{kg(v)}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4">
-            <ProgressBar value={progress} max={1} />
-            <div className="mt-2 flex justify-between text-xs text-muted">
-              <span className="font-semibold text-fg">{Math.round(progress * 100)}%</span>
-              <span>{Math.abs(toGo) < 0.05 ? "Target reached" : `${Math.abs(toGo).toFixed(1)} kg to go`}</span>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
-            <div>
-              <div className="text-xs text-muted">{change <= 0 ? "Total lost" : "Total gained"}</div>
-              <div className="font-display text-xl font-bold tabular-nums">{Math.abs(change).toFixed(1)} kg</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">Since last weigh-in</div>
-              {weekDelta === null ? (
-                <div className="text-sm text-muted">Needs 2 weigh-ins</div>
-              ) : (
-                <div className={`flex items-center gap-0.5 font-display text-xl font-bold tabular-nums ${goodDelta ? "text-accent" : weekDelta === 0 ? "" : "text-warn"}`}>
-                  {weekDelta < 0 ? <ArrowDownRight size={18} /> : weekDelta > 0 ? <ArrowUpRight size={18} /> : null}
-                  {signed(weekDelta)} kg
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
-
         {/* Last 7 days */}
-        <Card className="lg:col-span-2 xl:col-span-3">
+        <Card className="lg:col-span-3 xl:col-span-2">
           <CardTitle hint={avg7 !== null ? `Average ${avg7.toLocaleString()} kcal a day on logged days` : "Nothing logged in the last 7 days"}>
             Calories, last 7 days
           </CardTitle>
@@ -312,7 +294,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Weight chart */}
-        <Card className="lg:col-span-3 xl:col-span-2">
+        <Card className="lg:col-span-3 xl:col-span-4">
           <CardTitle hint={weights.length ? `${weights.length} weigh-in${weights.length === 1 ? "" : "s"} recorded` : undefined}>
             Weight progress
           </CardTitle>

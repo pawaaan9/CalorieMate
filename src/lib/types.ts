@@ -14,6 +14,10 @@ export interface Macros {
   fat: number;
   /** Total sugar in grams (part of carbs). Missing on records saved before sugar tracking. */
   sugar?: number;
+  /** Dietary fibre in grams. */
+  fiber?: number;
+  /** Added sugar in grams (part of total sugar). Natural sugar = sugar − addedSugar. */
+  addedSugar?: number;
 }
 
 export interface Portion {
@@ -103,8 +107,16 @@ export interface Profile {
   dailyCalorieTarget: number;
   /** Log food by weight (grams from a kitchen scale) by default. */
   weighFood: boolean;
+  /** When true, nutrient targets are worked out from the daily calorie target. */
+  autoTargets: boolean;
+  proteinTargetG: number;
+  carbsTargetG: number;
+  fatTargetG: number;
+  fiberTargetG: number;
   /** Daily total-sugar limit in grams. */
   sugarLimitG: number;
+  /** Daily added-sugar limit in grams. */
+  addedSugarLimitG: number;
   onboarded: boolean;
 }
 
@@ -118,6 +130,12 @@ export const DEFAULT_PROFILE: Profile = {
   activityLevel: "light",
   dailyCalorieTarget: 2000,
   weighFood: false,
+  autoTargets: true,
+  proteinTargetG: 125,
+  carbsTargetG: 225,
+  fatTargetG: 67,
+  fiberTargetG: 28,
   sugarLimitG: 50,
+  addedSugarLimitG: 25,
   onboarded: false,
 };

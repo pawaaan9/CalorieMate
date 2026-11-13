@@ -75,8 +75,10 @@ async function searchUsda(q: string): Promise<Food[]> {
     const protein = num(get(1003));
     const carbs = num(get(1005));
     const fat = num(get(1004));
-    // 2000 = Total Sugars, 1063 = Sugars, Total NLEA
+    // 2000 = Total Sugars, 1063 = Sugars, Total NLEA, 1079 = Fiber, 1235 = Sugars, added
     const sugar = num(get(2000, 1063));
+    const fiber = num(get(1079));
+    const added = get(1235);
     // 1008 = energy (kcal); 2047/2048 = Atwater energy on Foundation foods.
     const kcal = get(1008, 2047, 2048);
     const calories = Math.round(kcal ?? protein * 4 + carbs * 4 + fat * 9);
@@ -93,7 +95,7 @@ async function searchUsda(q: string): Promise<Food[]> {
         id: `usda-${f.fdcId}`,
         name: titleCase(f.description),
         category: "Other",
-        per100g: { calories, protein, carbs, fat, sugar },
+        per100g: { calories, protein, carbs, fat, sugar, fiber, addedSugar: added === undefined ? undefined : num(added) },
         portions,
         estimated: kcal === undefined,
         source: "usda",
@@ -154,6 +156,8 @@ async function searchOff(q: string): Promise<Food[]> {
         carbs: num(n["carbohydrates_100g"]),
         fat: num(n["fat_100g"]),
         sugar: num(n["sugars_100g"]),
+        fiber: num(n["fiber_100g"]),
+        addedSugar: n["added-sugars_100g"] === undefined ? undefined : num(n["added-sugars_100g"]),
       },
       portions,
       estimated: false,
@@ -174,6 +178,7 @@ interface CapiFood {
   carbs_100g: number | null;
   fat_100g: number | null;
   sugar_100g: number | null;
+  fiber_100g?: number | null;
   default_portion?: { grams: number; label: string } | null;
 }
 
@@ -216,6 +221,8 @@ async function searchCalorieApi(q: string): Promise<Food[]> {
           carbs: num(f.carbs_100g),
           fat: num(f.fat_100g),
           sugar: num(f.sugar_100g),
+          fiber: num(f.fiber_100g),
+          // Calorie API does not report added sugar.
         },
         portions,
         estimated: f.is_verified === false,

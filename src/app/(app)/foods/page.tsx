@@ -97,7 +97,8 @@ export default function FoodsPage() {
                     <div className="mt-0.5 whitespace-nowrap text-xs tabular-nums text-muted">
                       <span className="font-semibold text-accent">{f.per100g.calories} kcal</span>
                       <span className="hidden sm:inline"> per 100 g</span> · P {Math.round(f.per100g.protein)} · C{" "}
-                      {Math.round(f.per100g.carbs)} · S {Math.round(f.per100g.sugar ?? 0)} · F {Math.round(f.per100g.fat)}
+                      {Math.round(f.per100g.carbs)} · F {Math.round(f.per100g.fat)} · Fb {Math.round(f.per100g.fiber ?? 0)} · S{" "}
+                      {Math.round(f.per100g.sugar ?? 0)}
                     </div>
                   </div>
                 </button>

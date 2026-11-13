@@ -3,7 +3,7 @@
 import { ArrowLeft, Globe, Minus, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { addEntry, updateEntry } from "@/lib/db";
-import { macrosFor } from "@/lib/nutrition";
+import { macrosFor, naturalSugar } from "@/lib/nutrition";
 import { searchOnline } from "@/lib/onlineSearch";
 import { FOOD_CATEGORIES, MEALS, SOURCE_LABEL, type Entry, type Food, type Macros, type Meal, type Portion } from "@/lib/types";
 import { FoodForm } from "./FoodForm";
@@ -36,22 +36,26 @@ export function searchFoods(foods: Food[], q: string): Food[] {
 }
 
 function MacroPreview({ m }: { m: Macros }) {
+  const cell = (label: string, value: string, cls = "") => (
+    <div key={label} className="min-w-0">
+      <div className={`font-display text-base font-bold tabular-nums sm:text-lg ${cls}`}>{value}</div>
+      <div className="truncate text-[11px] font-medium text-muted">{label}</div>
+    </div>
+  );
   return (
-    <div className="grid grid-cols-5 gap-1 rounded-3xl border border-line bg-raised px-2 py-3 text-center sm:gap-2">
-      {(
-        [
-          ["kcal", m.calories, "text-accent"],
-          ["Protein", `${m.protein}g`, ""],
-          ["Carbs", `${m.carbs}g`, ""],
-          ["Sugar", `${m.sugar ?? 0}g`, ""],
-          ["Fat", `${m.fat}g`, ""],
-        ] as const
-      ).map(([label, value, cls]) => (
-        <div key={label}>
-          <div className={`font-display text-base font-bold tabular-nums sm:text-lg ${cls}`}>{value}</div>
-          <div className="text-[11px] font-medium text-muted">{label}</div>
-        </div>
-      ))}
+    <div className="space-y-3 rounded-3xl border border-line bg-raised px-2 py-3 text-center">
+      <div className="grid grid-cols-4 gap-1 sm:gap-2">
+        {cell("kcal", String(m.calories), "text-accent")}
+        {cell("Protein", `${m.protein}g`)}
+        {cell("Carbs", `${m.carbs}g`)}
+        {cell("Fat", `${m.fat}g`)}
+      </div>
+      <div className="grid grid-cols-4 gap-1 border-t border-line pt-3 sm:gap-2">
+        {cell("Fibre", `${m.fiber ?? 0}g`)}
+        {cell("Sugar", `${m.sugar ?? 0}g`)}
+        {cell("Natural", `${naturalSugar(m)}g`)}
+        {cell("Added", `${m.addedSugar ?? 0}g`)}
+      </div>
     </div>
   );
 }
