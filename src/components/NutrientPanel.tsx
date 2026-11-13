@@ -46,12 +46,14 @@ function NutrientTile({
   eaten,
   target,
   dot,
+  showKind = true,
 }: {
-  label: string;
+  label: React.ReactNode;
   kind: TargetKind;
   eaten: number;
   target: number;
   dot: string;
+  showKind?: boolean;
 }) {
   const s = status(kind, eaten, target);
   const pct = target > 0 ? Math.min(100, (eaten / target) * 100) : 0;
@@ -66,7 +68,9 @@ function NutrientTile({
           <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
           <span className="truncate">{label}</span>
         </span>
-        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted/70">{HINT[kind]}</span>
+        {showKind && (
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted/70">{HINT[kind]}</span>
+        )}
       </div>
       <div className={`mt-1 whitespace-nowrap font-display text-xl font-bold tabular-nums ${s.tone === "bad" ? "text-danger" : ""}`}>
         {g(eaten)}
@@ -87,17 +91,38 @@ function NutrientTile({
  * Daily nutrients against their targets: macros and fibre, then total,
  * natural and added sugar. Calories are shown separately by each page.
  */
-export function NutrientPanel({ totals, targets }: { totals: Macros; targets: NutrientTargets }) {
+export function NutrientPanel({
+  totals,
+  targets,
+  narrow = false,
+}: {
+  totals: Macros;
+  targets: NutrientTargets;
+  /** For side panels: macros always in a 2 × 2 grid. */
+  narrow?: boolean;
+}) {
   const tile = (key: NutrientKey) => {
     const n = NUTRIENTS.find((x) => x.key === key)!;
     return (
       <NutrientTile
         key={key}
-        label={n.label}
+        label={
+          n.kind === "limit" ? (
+            <>
+              {/* Short names on phones; the "Sugar" heading gives the context. */}
+              <span className="sm:hidden">{n.label.replace(/ sugar$/i, "")}</span>
+              <span className="hidden sm:inline">{n.label}</span>
+            </>
+          ) : (
+            n.label
+          )
+        }
         kind={n.kind}
         eaten={consumed(totals, key)}
         target={targets[key]}
         dot={DOT[key]}
+        // All sugar tiles are limits; the group heading says so once.
+        showKind={n.kind !== "limit"}
       />
     );
   };
@@ -106,11 +131,13 @@ export function NutrientPanel({ totals, targets }: { totals: Macros; targets: Nu
     <div className="space-y-4">
       <section>
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Macros & fibre</h3>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">{(["protein", "carbs", "fat", "fiber"] as const).map(tile)}</div>
+        <div className={`grid grid-cols-2 gap-2 ${narrow ? "" : "sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4"}`}>{(["protein", "carbs", "fat", "fiber"] as const).map(tile)}</div>
       </section>
       <section>
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Sugar</h3>
-        <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
+          Sugar <span className="font-semibold normal-case tracking-normal text-muted/70">· daily limits</span>
+        </h3>
+        <div className="grid grid-cols-3 gap-2">
           {(["sugar", "naturalSugar", "addedSugar"] as const).map(tile)}
         </div>
       </section>

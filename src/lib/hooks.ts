@@ -11,12 +11,23 @@ export function useEntries(uid: string, date: string): Entry[] | null {
   return state?.date === date ? state.entries : null;
 }
 
-/** Live daily summaries from `fromDate` onwards, keyed by date. `null` while loading. */
-export function useSummaries(uid: string, fromDate: string): Map<string, DailySummary> | null {
-  const [map, setMap] = useState<Map<string, DailySummary> | null>(null);
+/**
+ * Live daily summaries from `fromDate` (up to `toDate` when given), keyed by date.
+ * `null` while loading or after the range changes until new data arrives.
+ */
+export function useSummaries(uid: string, fromDate: string, toDate?: string): Map<string, DailySummary> | null {
+  const [state, setState] = useState<{ range: string; map: Map<string, DailySummary> } | null>(null);
+  const range = `${fromDate}|${toDate ?? ""}`;
   useEffect(
-    () => subscribeSummaries(uid, fromDate, (list) => setMap(new Map(list.map((s) => [s.date, s])))),
-    [uid, fromDate],
+    () =>
+      subscribeSummaries(
+        uid,
+        fromDate,
+        (list) => setState({ range: `${fromDate}|${toDate ?? ""}`, map: new Map(list.map((s) => [s.date, s])) }),
+        undefined,
+        toDate,
+      ),
+    [uid, fromDate, toDate],
   );
-  return map;
+  return state?.range === range ? state.map : null;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, NotebookPen, Plus, Scale, Settings, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, LayoutDashboard, NotebookPen, Plus, Scale, Settings, UtensilsCrossed } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,6 +10,7 @@ import { useData } from "./Providers";
 const NAV = [
   { href: "/", label: "Dashboard", short: "Home", icon: LayoutDashboard },
   { href: "/log", label: "Food log", short: "Log", icon: NotebookPen },
+  { href: "/calendar", label: "Calendar", short: "Calendar", icon: CalendarDays },
   { href: "/foods", label: "Foods", short: "Foods", icon: UtensilsCrossed },
   { href: "/weight", label: "Weight", short: "Weight", icon: Scale },
   { href: "/settings", label: "Goals & settings", short: "Goals", icon: Settings },
@@ -32,7 +33,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { profile } = useData();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-  const mobileNav = [NAV[0], NAV[1], null, NAV[3], NAV[4]];
+  // Phones: Home, Log, +, Calendar, Weight. Goals sits in the top bar.
+  const mobileNav = [NAV[0], NAV[1], null, NAV[2], NAV[4]];
 
   return (
     <div className="min-h-dvh md:flex">
@@ -79,6 +81,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-bg/85 px-4 py-2.5 backdrop-blur md:hidden">
         <Link href="/">
           <Logo size={32} />
+        </Link>
+        <Link
+          href="/settings"
+          aria-label="Goals & settings"
+          aria-current={isActive("/settings") ? "page" : undefined}
+          className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
+            isActive("/settings") ? "bg-accent-soft text-accent" : "text-muted hover:bg-subtle hover:text-fg"
+          }`}
+        >
+          <Settings size={21} />
         </Link>
       </div>
 

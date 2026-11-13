@@ -23,15 +23,18 @@ function amountText(e: Entry): string {
 }
 
 /** Opens the picker when arriving via /log?add=1 or /log?meal=lunch. */
-function OpenFromQuery({ onOpen }: { onOpen: (meal: Meal) => void }) {
+function OpenFromQuery({ onOpen, onDate }: { onOpen: (meal: Meal) => void; onDate: (date: string) => void }) {
   const params = useSearchParams();
   const router = useRouter();
   useEffect(() => {
     const meal = params.get("meal") as Meal | null;
-    if (!params.get("add") && !meal) return;
-    onOpen(meal && meal in MEAL_META ? meal : mealForNow());
+    const date = params.get("date");
+    const validDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= todayKey() ? date : null;
+    if (!params.get("add") && !meal && !validDate) return;
+    if (validDate) onDate(validDate);
+    if (params.get("add") || meal) onOpen(meal && meal in MEAL_META ? meal : mealForNow());
     router.replace("/log", { scroll: false });
-  }, [params, router, onOpen]);
+  }, [params, router, onOpen, onDate]);
   return null;
 }
 
@@ -77,7 +80,7 @@ export default function LogPage() {
   return (
     <>
       <Suspense fallback={null}>
-        <OpenFromQuery onOpen={setAddTo} />
+        <OpenFromQuery onOpen={setAddTo} onDate={setDate} />
       </Suspense>
 
       <PageHeader

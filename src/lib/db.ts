@@ -340,9 +340,13 @@ export function subscribeSummaries(
   fromDate: string,
   cb: (summaries: DailySummary[]) => void,
   onError?: OnError,
+  toDate?: string,
 ): Unsubscribe {
+  const range = toDate
+    ? [where("date", ">=", fromDate), where("date", "<=", toDate)]
+    : [where("date", ">=", fromDate)];
   return onSnapshot(
-    query(summariesCol(uid), where("date", ">=", fromDate), orderBy("date")),
+    query(summariesCol(uid), ...range, orderBy("date")),
     (snap) => cb(snap.docs.map((d) => d.data() as DailySummary)),
     onError,
   );
